@@ -1,0 +1,37 @@
+package com.ledgerlite.app.data.repository
+
+import com.ledgerlite.app.data.local.dao.CategoryDao
+import com.ledgerlite.app.data.local.entity.Category
+import com.ledgerlite.app.util.DateUtil
+import kotlinx.coroutines.flow.Flow
+
+class CategoryRepository(private val dao: CategoryDao) {
+
+    fun observeAll(): Flow<List<Category>> = dao.observeAll()
+
+    fun observeRecent(limit: Int): Flow<List<Category>> = dao.observeRecent(limit)
+
+    suspend fun getById(id: Long): Category? = dao.getById(id)
+
+    suspend fun create(name: String, color: Long, icon: String = ""): Long {
+        val now = DateUtil.nowMillis()
+        val category = Category(
+            name = name,
+            icon = icon,
+            color = color,
+            sortOrder = (System.currentTimeMillis() % 1000).toInt(),
+            isDefault = false,
+            createdAt = now,
+            updatedAt = now
+        )
+        return dao.insert(category)
+    }
+
+    suspend fun update(category: Category) {
+        dao.update(category.copy(updatedAt = DateUtil.nowMillis()))
+    }
+
+    suspend fun delete(id: Long) {
+        dao.delete(id)
+    }
+}
