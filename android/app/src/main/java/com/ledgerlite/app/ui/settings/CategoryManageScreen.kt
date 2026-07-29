@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -34,13 +37,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -49,7 +56,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ledgerlite.app.LedgerLiteApp
 import com.ledgerlite.app.data.local.entity.Category
 import com.ledgerlite.app.ui.components.CategoryIcon
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,25 +96,48 @@ fun CategoryManageScreen(onBack: () -> Unit) {
             }
         }
     ) { padding ->
+        // 本地维护顺序，拖拽时即时调整；松手写库后由 Flow 回灌
+        val ordered = remember(categories) { mutableStateListOf<Category>().apply { addAll(categories) } }
+        val lazyListState = rememberLazyListState()
+        val scope2 = scope
+        val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+            // from/to 是 LazyListItemInfo，取 index
+            ordered.add(to.index, ordered.removeAt(from.index))
+        }
+
+        // 拖拽结束（dragging 由 true→false）时写回 sortOrder
+        LaunchedEffect(reorderState) {
+            snapshotFlow { reorderState.isAnyItemDragging }
+                .distinctUntilChanged()
+                .filter { !it }
+                .collect {
+                    scope2.launch { container.categoryRepository.reorder(ordered.toList()) }
+                }
+        }
+
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)) }
-            items(categories, key = { it.id }) { category ->
-                CategoryRow(
-                    category = category,
-                    onEdit = { editing = category },
-                    onDelete = {
-                        scope.launch {
-                            val count = container.expenseRepository.referenceCount(category.id)
-                            blockedCount = count
-                            pendingDelete = category
+            itemsIndexed(ordered, key = { _, c -> c.id }) { index, category ->
+                ReorderableItem(reorderState, key = category.id) { isDragging ->
+                    CategoryRow(
+                        category = category,
+                        isDragging = isDragging,
+                        dragModifier = Modifier.longPressDraggableHandle(),
+                        onEdit = { editing = category },
+                        onDelete = {
+                            scope.launch {
+                                val count = container.expenseRepository.referenceCount(category.id)
+                                blockedCount = count
+                                pendingDelete = category
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
-            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 
@@ -173,18 +207,25 @@ fun CategoryManageScreen(onBack: () -> Unit) {
 @Composable
 private fun CategoryRow(
     category: Category,
+    isDragging: Boolean,
+    dragModifier: Modifier,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (isDragging) Modifier.alpha(0.6f) else Modifier),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onEdit
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .then(dragModifier),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val accent = Color(category.color)
