@@ -59,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ledgerlite.app.LedgerLiteApp
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.ui.components.AmountText
+import com.ledgerlite.app.ui.components.CategoryIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -431,12 +432,23 @@ private fun SwipeToDismissRow(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val accent = item.categoryColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+                val iconVector = item.categoryIcon?.let { CategoryIcon.vector(it) }
                 Box(
-                    modifier = Modifier.size(10.dp).background(
-                        item.categoryColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary,
-                        CircleShape
-                    )
-                )
+                    modifier = Modifier.size(24.dp).background(accent.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (iconVector != null) {
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = null,
+                            tint = accent,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    } else {
+                        Box(modifier = Modifier.size(10.dp).background(accent, CircleShape))
+                    }
+                }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

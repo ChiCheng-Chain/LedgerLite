@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ledgerlite.app.LedgerLiteApp
 import com.ledgerlite.app.data.local.entity.Category
+import com.ledgerlite.app.ui.components.CategoryIcon
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -186,15 +187,22 @@ private fun CategoryRow(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val accent = Color(category.color)
+            val iconVector = CategoryIcon.vector(category.icon)
             Box(
-                modifier = Modifier.size(24.dp).padding(4.dp),
+                modifier = Modifier.size(24.dp).background(accent.copy(alpha = 0.15f), RoundedCornerShape(6.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color(category.color), RoundedCornerShape(4.dp))
-                )
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                } else {
+                    Box(modifier = Modifier.size(12.dp).background(accent, RoundedCornerShape(3.dp)))
+                }
             }
             Spacer(Modifier.size(12.dp))
             Text(

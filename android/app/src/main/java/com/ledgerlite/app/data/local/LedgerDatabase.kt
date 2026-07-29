@@ -50,23 +50,23 @@ class SeedCallback : RoomDatabase.Callback() {
         super.onCreate(db)
         val now = System.currentTimeMillis()
         val defaults = listOf(
-            SeedCategory(1, "餐饮", 0xFFD95F43, 1),
-            SeedCategory(2, "交通", 0xFF3C6E71, 2),
-            SeedCategory(3, "购物", 0xFFB57BA6, 3),
-            SeedCategory(4, "日用", 0xFF8B9D77, 4),
-            SeedCategory(5, "娱乐", 0xFFE0A458, 5),
-            SeedCategory(6, "医疗", 0xFFC75D5D, 6),
-            SeedCategory(7, "学习", 0xFF5B7C99, 7),
-            SeedCategory(8, "其他", 0xFF6D7571, 8),
+            SeedCategory(1, "餐饮", 0xFFD95F43, 1, "food"),
+            SeedCategory(2, "交通", 0xFF3C6E71, 2, "transport"),
+            SeedCategory(3, "购物", 0xFFB57BA6, 3, "shopping"),
+            SeedCategory(4, "日用", 0xFF8B9D77, 4, "daily"),
+            SeedCategory(5, "娱乐", 0xFFE0A458, 5, "entertainment"),
+            SeedCategory(6, "医疗", 0xFFC75D5D, 6, "medical"),
+            SeedCategory(7, "学习", 0xFF5B7C99, 7, "study"),
+            SeedCategory(8, "其他", 0xFF6D7571, 8, "other"),
         )
         defaults.forEach { c ->
             db.execSQL(
                 "INSERT OR IGNORE INTO categories (id, name, icon, color, sortOrder, isDefault, createdAt, updatedAt) " +
-                    "VALUES (?, ?, '', ?, ?, 1, ?, ?)",
-                arrayOf(c.id, c.name, c.color, c.sortOrder, now, now)
+                    "VALUES (?, ?, ?, ?, ?, 1, ?, ?)",
+                arrayOf(c.id, c.name, c.icon, c.color, c.sortOrder, now, now)
             )
         }
     }
 
-    private data class SeedCategory(val id: Long, val name: String, val color: Long, val sortOrder: Int)
+    private data class SeedCategory(val id: Long, val name: String, val color: Long, val sortOrder: Int, val icon: String)
 }

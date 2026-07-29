@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,13 +49,14 @@ import com.ledgerlite.app.LedgerLiteApp
 import com.ledgerlite.app.data.local.entity.Category
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.ui.components.AmountText
+import com.ledgerlite.app.ui.components.CategoryIcon
 import com.ledgerlite.app.util.DateUtil
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun RecordScreen() {
+fun RecordScreen(bottomInset: Dp = 0.dp) {
     val container = (LocalContext.current.applicationContext as LedgerLiteApp).container
     val vm: RecordViewModel = viewModel(
         factory = RecordViewModel.Factory(container.expenseRepository, container.categoryRepository)
@@ -65,6 +67,7 @@ fun RecordScreen() {
 
     RecordContent(
         state = state,
+        bottomInset = bottomInset,
         onQuickEntry = { presetCategoryId = null; showEntrySheet = true },
         onCategoryClick = { id -> presetCategoryId = id; showEntrySheet = true },
         onRecentClick = { /* 后续接流水编辑，MVP 先空 */ }
@@ -85,6 +88,7 @@ fun RecordScreen() {
 @Composable
 private fun RecordContent(
     state: RecordUiState,
+    bottomInset: Dp,
     onQuickEntry: () -> Unit,
     onCategoryClick: (Long) -> Unit,
     onRecentClick: (Long) -> Unit
@@ -92,7 +96,10 @@ private fun RecordContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            top = 20.dp,
+            bottom = 20.dp + bottomInset
+        )
     ) {
         item { TodayCard(state.todayTotal) }
         item { Spacer(Modifier.height(12.dp)) }
@@ -205,6 +212,7 @@ private fun CategoryGrid(categories: List<Category>, onClick: (Long) -> Unit) {
 @Composable
 private fun CategoryBlock(category: Category, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val accent = Color(category.color)
+    val iconVector = CategoryIcon.vector(category.icon)
     Column(
         modifier = modifier.clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -213,7 +221,16 @@ private fun CategoryBlock(category: Category, modifier: Modifier = Modifier, onC
             modifier = Modifier.size(48.dp).background(accent.copy(alpha = 0.15f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Box(modifier = Modifier.size(20.dp).background(accent, CircleShape))
+            if (iconVector != null) {
+                Icon(
+                    imageVector = iconVector,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Box(modifier = Modifier.size(20.dp).background(accent, CircleShape))
+            }
         }
         Spacer(Modifier.height(6.dp))
         Text(
@@ -256,14 +273,25 @@ private fun RecentExpenseCard(item: ExpenseWithCategory) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 分类色点
+            // 分类图标 / 色点
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                val accent = item.categoryColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+                val iconVector = item.categoryIcon?.let { CategoryIcon.vector(it) }
                 Box(
-                    modifier = Modifier.size(10.dp).background(
-                        item.categoryColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary,
-                        CircleShape
-                    )
-                )
+                    modifier = Modifier.size(24.dp).background(accent.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (iconVector != null) {
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = null,
+                            tint = accent,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    } else {
+                        Box(modifier = Modifier.size(10.dp).background(accent, CircleShape))
+                    }
+                }
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
