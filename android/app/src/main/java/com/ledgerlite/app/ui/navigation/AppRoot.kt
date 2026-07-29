@@ -191,7 +191,7 @@ private fun RecordTabScaffold(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
-            RecordScreen()
+            RecordScreen(bottomInset = innerPadding.calculateBottomPadding())
         }
     }
 }
