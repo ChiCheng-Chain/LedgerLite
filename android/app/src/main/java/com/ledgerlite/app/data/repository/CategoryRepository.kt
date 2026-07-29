@@ -31,6 +31,15 @@ class CategoryRepository(private val dao: CategoryDao) {
         dao.update(category.copy(updatedAt = DateUtil.nowMillis()))
     }
 
+    /** 按给定顺序重排：位置即 sortOrder。只更新发生变动的分类。 */
+    suspend fun reorder(orderedCategories: List<Category>) {
+        val updates = orderedCategories.mapIndexed { index, cat ->
+            if (cat.sortOrder == index) null
+            else cat.copy(sortOrder = index, updatedAt = DateUtil.nowMillis())
+        }.filterNotNull()
+        if (updates.isNotEmpty()) dao.updateAll(updates)
+    }
+
     suspend fun delete(id: Long) {
         dao.delete(id)
     }

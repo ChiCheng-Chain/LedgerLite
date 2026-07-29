@@ -93,17 +93,7 @@ fun StatsScreen() {
 
         Spacer(Modifier.height(16.dp))
 
-        // 1. 日支出趋势折线图（近 30 天连续，没支出的天填 0）
-        val trendPoints = remember(state.trend30Days) {
-            buildTrendPoints(state.trend30Days, days = 30)
-        }
-        ChartCard(title = "支出趋势", subtitle = "近 30 天") {
-            TrendLineChart(points = trendPoints)
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // 2. 分类占比环形图 + 排行
+        // 1. 分类占比环形图 + 排行
         if (state.categoryShares.isNotEmpty()) {
             ChartCard(title = "分类占比", subtitle = state.rangeLabel) {
                 val slices = state.categoryShares.map { sum ->
@@ -118,19 +108,28 @@ fun StatsScreen() {
             Spacer(Modifier.height(16.dp))
         }
 
-        // 3. 日支出热力图（近 30 天）
-        if (state.trend30Days.isNotEmpty()) {
-            ChartCard(title = "支出热力图", subtitle = "近 30 天") {
-                val cells = state.trend30Days.map { day ->
-                    HeatmapCell(
-                        label = SimpleDateFormat("M/d", Locale.getDefault()).format(Date(day.dayStart)),
-                        value = day.total
-                    )
-                }
-                HeatmapChart(cells = cells)
-            }
-            Spacer(Modifier.height(16.dp))
+        // 2. 日支出趋势折线图（近 30 天连续，没支出的天填 0）
+        val trendPoints = remember(state.trend50Days) {
+            buildTrendPoints(state.trend50Days, days = 30)
         }
+        ChartCard(title = "支出趋势", subtitle = "近 30 天") {
+            TrendLineChart(points = trendPoints)
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // 3. 日支出热力图（最近 50 天，GitHub 风格铺满）
+        ChartCard(title = "支出热力图", subtitle = "近 12 周") {
+            val cells = state.trend50Days.map { day ->
+                HeatmapCell(
+                    label = SimpleDateFormat("M/d", Locale.getDefault()).format(Date(day.dayStart)),
+                    value = day.total,
+                    timestamp = day.dayStart
+                )
+            }
+            HeatmapChart(cells = cells)
+        }
+        Spacer(Modifier.height(16.dp))
 
         // 6. 资产使用成本独立区
         if (state.bigItemDaily > 0 || state.bigItemWeekly > 0) {

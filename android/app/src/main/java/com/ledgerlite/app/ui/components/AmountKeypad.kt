@@ -110,15 +110,15 @@ fun AmountDisplay(
     showTrailingDot: Boolean = true
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Bottom
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)
     ) {
         Text(
             text = "¥",
             style = AmountNumberStyle.copy(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = (fontSize.value * 0.6f).sp
-            )
+            ),
+            modifier = Modifier.alignByBaseline()
         )
         androidx.compose.foundation.layout.Spacer(Modifier.padding(end = 4.dp))
         Text(
@@ -127,7 +127,8 @@ fun AmountDisplay(
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = fontSize,
                 fontWeight = FontWeight.Bold
-            )
+            ),
+            modifier = Modifier.alignByBaseline()
         )
         if (showTrailingDot && text.isNotEmpty() && !text.contains('.')) {
             Text(
@@ -136,7 +137,8 @@ fun AmountDisplay(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     fontSize = (fontSize.value * 0.85f).sp,
                     fontWeight = FontWeight.Bold
-                )
+                ),
+                modifier = Modifier.alignByBaseline()
             )
         }
     }

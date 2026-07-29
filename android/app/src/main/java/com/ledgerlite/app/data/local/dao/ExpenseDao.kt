@@ -84,15 +84,17 @@ interface ExpenseDao {
     """)
     fun sumGroupByCategoryFiltered(start: Long, end: Long, categoryId: Long): Flow<List<CategorySum>>
 
-    // 统计：按日聚合。按本地时区日分组。
+    // 统计：按日聚合。dayStart 按本地时区日界对齐：
+    // (occurredAt + tzOffset) 对 86400000 取模得到当日已过的 UTC 毫秒，
+    // 用 occurredAt 减去它得到本地 0 点 epoch。tzOffset 为本地时区相对 UTC 的毫秒偏移。
     @Query("""
-        SELECT (occurredAt / 86400000 * 86400000) AS dayStart, SUM(amount) AS total
+        SELECT occurredAt - ((occurredAt + :tzOffset) % 86400000) AS dayStart, SUM(amount) AS total
         FROM expense_records
         WHERE deletedAt IS NULL AND occurredAt >= :start AND occurredAt < :end
         GROUP BY dayStart
         ORDER BY dayStart ASC
     """)
-    fun sumGroupByDay(start: Long, end: Long): Flow<List<DaySum>>
+    fun sumGroupByDay(start: Long, end: Long, tzOffset: Long): Flow<List<DaySum>>
 
     // 一次性读取
     @Query("SELECT * FROM expense_records WHERE id = :id")

@@ -57,7 +57,12 @@ class SeedCallback : RoomDatabase.Callback() {
             SeedCategory(5, "娱乐", 0xFFE0A458, 5, "entertainment"),
             SeedCategory(6, "医疗", 0xFFC75D5D, 6, "medical"),
             SeedCategory(7, "学习", 0xFF5B7C99, 7, "study"),
-            SeedCategory(8, "其他", 0xFF6D7571, 8, "other"),
+            SeedCategory(8, "零食", 0xFFE89B7C, 8, "snack"),
+            SeedCategory(9, "水果", 0xFF7FAE6E, 9, "fruit"),
+            SeedCategory(10, "住房", 0xFF6D7B8D, 10, "housing"),
+            SeedCategory(11, "通讯", 0xFF5E8BAA, 11, "telecom"),
+            SeedCategory(12, "超市", 0xFFB98B5E, 12, "supermarket"),
+            SeedCategory(13, "其他", 0xFF6D7571, 13, "other"),
         )
         defaults.forEach { c ->
             db.execSQL(

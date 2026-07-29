@@ -19,9 +19,10 @@ import kotlinx.coroutines.launch
 /** 时间筛选类型。 */
 enum class TimeFilter { TODAY, YESTERDAY, WEEK, MONTH, CUSTOM }
 
-/** 一天的流水分组。 */
+/** 流水分组。分组粒度由筛选口径决定：日/周/月/自定义。 */
 data class DayGroup(
-    val dayStart: Long,
+    val groupStart: Long,
+    val label: String,
     val items: List<ExpenseWithCategory>,
     val dayTotal: Long
 )
@@ -32,6 +33,9 @@ data class LedgerUiState(
     val customStart: Long = 0,
     val customEnd: Long = 0,
     val selectedCategoryId: Long? = null, // null = 全部分类
+    val totalAmount: Long = 0,
+    val rangeLabel: String = "",
+    val multiDayGroups: Boolean = false,
     val isLoading: Boolean = true
 )
 
@@ -56,11 +60,14 @@ class LedgerViewModel(
             }
             flow.map { items ->
                 LedgerUiState(
-                    groups = groupByDay(items),
+                    groups = groupByRange(items, filter, custom),
                     timeFilter = filter,
                     customStart = custom.first,
                     customEnd = custom.second,
                     selectedCategoryId = catId,
+                    totalAmount = items.sumOf { it.expense.amount },
+                    rangeLabel = rangeLabel(filter),
+                    multiDayGroups = false,
                     isLoading = false
                 )
             }
@@ -93,6 +100,15 @@ class LedgerViewModel(
 
     fun setCategoryFilter(categoryId: Long?) { _categoryId.value = categoryId }
 
+    /** 顶部总合计卡片的标题。 */
+    private fun rangeLabel(filter: TimeFilter): String = when (filter) {
+        TimeFilter.TODAY -> "今日合计"
+        TimeFilter.YESTERDAY -> "昨日合计"
+        TimeFilter.WEEK -> "本周合计"
+        TimeFilter.MONTH -> "本月合计"
+        TimeFilter.CUSTOM -> "所选范围合计"
+    }
+
     fun delete(id: Long) {
         viewModelScope.launch { expenseRepository.softDelete(id) }
     }
@@ -103,18 +119,24 @@ class LedgerViewModel(
 
     suspend fun getById(id: Long) = expenseRepository.getById(id)
 
-    /** 按本地日分组，同日内按时间倒序。 */
-    private fun groupByDay(items: List<ExpenseWithCategory>): List<DayGroup> {
+    /** 按本地日分组，同日内按时间倒序。header 标签为「M月d日 星期几」。 */
+    private fun groupByRange(
+        items: List<ExpenseWithCategory>,
+        filter: TimeFilter,
+        @Suppress("UNUSED_PARAMETER") custom: Pair<Long, Long>
+    ): List<DayGroup> {
+        val dayFmt = java.text.SimpleDateFormat("M月d日 EEEE", java.util.Locale.CHINA)
         return items
             .groupBy { DateUtil.startOfDay(it.expense.occurredAt) }
             .map { (dayStart, dayItems) ->
                 DayGroup(
-                    dayStart = dayStart,
+                    groupStart = dayStart,
+                    label = dayFmt.format(java.util.Date(dayStart)),
                     items = dayItems.sortedByDescending { it.expense.occurredAt },
                     dayTotal = dayItems.sumOf { it.expense.amount }
                 )
             }
-            .sortedByDescending { it.dayStart }
+            .sortedByDescending { it.groupStart }
     }
 
     class Factory(private val expenseRepository: ExpenseRepository) : ViewModelProvider.Factory {

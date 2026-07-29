@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -35,24 +37,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ledgerlite.app.ui.theme.AmountNumberStyle
 import com.ledgerlite.app.util.MoneyUtil
+import java.util.Calendar
 import kotlin.math.max
 
 /**
- * 日支出热力图。每格一天，颜色深浅代表支出多少。横向按周排列。
- * @param cells 按时间正序，每个 cell 一天。
+ * 日支出热力图，10 列 × 5 行 = 50 格网格，每格一天。
+ * 范围内每一天都画方块：无支出用中性灰底，有支出按深浅染色。
+ * @param cells 按时间正序，每个 cell 一天（timestamp 为本地 0 点 epoch）。
  */
 @Composable
 fun HeatmapChart(
     cells: List<HeatmapCell>,
     modifier: Modifier = Modifier,
-    baseColor: Color = MaterialTheme.colorScheme.primary
+    baseColor: Color = MaterialTheme.colorScheme.primary,
+    cols: Int = 14,
+    rows: Int = 6
 ) {
-    if (cells.isEmpty()) {
-        Box(modifier = modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-            Text("暂无数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        return
-    }
+    val days = cols * rows
+    val emptyColor = MaterialTheme.colorScheme.surfaceVariant
 
     val progress = remember { Animatable(0f) }
     LaunchedEffect(cells) {
@@ -60,55 +62,75 @@ fun HeatmapChart(
         progress.animateTo(1f, tween(durationMillis = 600))
     }
 
+    // 用 timestamp（本地 0 点 epoch）建索引。
+    val dataMap = remember(cells) { cells.associate { it.timestamp to it } }
+    val cal = remember { Calendar.getInstance() }
+
+    // 窗口：从今天往回铺 days 天。
+    val todayStart = remember {
+        cal.timeInMillis = System.currentTimeMillis()
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        cal.timeInMillis
+    }
+    val windowStart = todayStart - (days - 1) * 86_400_000L
+
     val maxVal = max(cells.maxOfOrNull { it.value } ?: 0L, 1L)
     var touched by remember { mutableStateOf<HeatmapCell?>(null) }
+
+    // 方块按容器尺寸均分：宽=容器宽/列，高=容器高/行，整片铺满。
+    val gapPx = with(androidx.compose.ui.platform.LocalDensity.current) { 3.dp.toPx() }
+    val gridHeightDp = 150.dp
 
     Column(modifier = modifier.fillMaxWidth()) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(gridHeightDp)
                 .pointerInput(cells) {
                     detectTapGestures { offset ->
-                        // 简单定位：估算点击的格子
-                        val cols = (size.width / 26f).toInt().coerceAtLeast(1)
-                        val rows = (cells.size + cols - 1) / cols
-                        val cellW = size.width / cols
-                        val cellH = size.height / rows
-                        val col = (offset.x / cellW).toInt().coerceIn(0, cols - 1)
-                        val row = (offset.y / cellH).toInt().coerceIn(0, rows - 1)
-                        val idx = row * cols + col
-                        touched = cells.getOrNull(idx)
+                        val cellW = (size.width - (cols - 1) * gapPx) / cols
+                        val cellH = (size.height - (rows - 1) * gapPx) / rows
+                        val col = (offset.x / (cellW + gapPx)).toInt()
+                        val row = (offset.y / (cellH + gapPx)).toInt()
+                        if (col in 0 until cols && row in 0 until rows) {
+                            val slot = row * cols + col
+                            val ts = windowStart + slot * 86_400_000L
+                            val cell = dataMap[ts]
+                            if (cell != null) touched = cell
+                        }
                     }
                 }
         ) {
-            val cols = (size.width / 26f).toInt().coerceAtLeast(1)
-            val rows = (cells.size + cols - 1) / cols
-            val cellW = size.width / cols
-            val cellH = size.height / rows
-            val gap = 3f
-            cells.forEachIndexed { i, cell ->
-                val col = i % cols
-                val row = i / cols
-                val intensity = if (cell.value <= 0) 0f else (cell.value.toFloat() / maxVal)
-                // 4 档颜色
-                val alpha = when {
-                    cell.value <= 0 -> 0.08f
-                    intensity < 0.25f -> 0.25f
-                    intensity < 0.5f -> 0.5f
-                    intensity < 0.75f -> 0.75f
-                    else -> 1f
+            val cellW = (size.width - (cols - 1) * gapPx) / cols
+            val cellH = (size.height - (rows - 1) * gapPx) / rows
+            for (slot in 0 until days) {
+                val ts = windowStart + slot * 86_400_000L
+                val col = slot % cols
+                val row = slot / cols
+                val cell = dataMap[ts]
+                val value = cell?.value ?: 0L
+                val color = if (value <= 0) {
+                    emptyColor.copy(alpha = 0.5f * progress.value)
+                } else {
+                    val intensity = value.toFloat() / maxVal
+                    val alpha = when {
+                        intensity < 0.25f -> 0.3f
+                        intensity < 0.5f -> 0.55f
+                        intensity < 0.75f -> 0.8f
+                        else -> 1f
+                    }
+                    baseColor.copy(alpha = alpha * progress.value)
                 }
                 drawRoundRect(
-                    color = baseColor.copy(alpha = alpha * progress.value),
-                    topLeft = Offset(col * cellW + gap / 2, row * cellH + gap / 2),
-                    size = Size(cellW - gap, cellH - gap),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                    color = color,
+                    topLeft = Offset(col * (cellW + gapPx), row * (cellH + gapPx)),
+                    size = Size(cellW, cellH),
+                    cornerRadius = CornerRadius(6f, 6f)
                 )
             }
         }
 
-        // 触点提示
         touched?.let { cell ->
             Text(
                 text = "${cell.label}  ¥${MoneyUtil.centsToYuan(cell.value)}",
@@ -122,7 +144,6 @@ fun HeatmapChart(
         }
 
         Spacer(Modifier.height(8.dp))
-        // 图例
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("少", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             listOf(0.08f, 0.25f, 0.5f, 0.75f, 1f).forEach { a ->
@@ -133,4 +154,4 @@ fun HeatmapChart(
     }
 }
 
-data class HeatmapCell(val label: String, val value: Long)
+data class HeatmapCell(val label: String, val value: Long, val timestamp: Long = 0L)

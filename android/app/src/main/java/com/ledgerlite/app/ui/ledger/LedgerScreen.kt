@@ -290,28 +290,58 @@ private fun LedgerContent(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item(key = "total-summary") {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        state.rangeLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    AmountText(
+                        cents = state.totalAmount,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold,
+                        showDecimals = false
+                    )
+                }
+            }
+        }
+
         state.groups.forEach { group ->
-            item(key = "header-${group.dayStart}") {
+            item(key = "header-${group.groupStart}") {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 0.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        dayFormat.format(Date(group.dayStart)),
+                        group.label,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        "合计",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    AmountText(
+                        cents = group.dayTotal,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        showDecimals = false
                     )
                 }
             }
             items(group.items, key = { it.expense.id }) { item ->
                 SwipeToDismissRow(
                     item = item,
+                    showDate = state.multiDayGroups,
                     onClick = { onItemClick(item) },
                     onSwiped = { onSwipeDelete(item) }
                 )
@@ -393,6 +423,7 @@ private fun CustomRangePicker(
 @Composable
 private fun SwipeToDismissRow(
     item: ExpenseWithCategory,
+    showDate: Boolean,
     onClick: () -> Unit,
     onSwiped: () -> Unit
 ) {

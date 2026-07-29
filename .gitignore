@@ -1,0 +1,23 @@
+# Build outputs
+android/app/build/
+android/build/
+build/
+
+# IDE
+.idea/
+*.iml
+.cxx/
+.externalNativeBuild/
+
+# Local config
+local.properties
+keystore.properties
+*.keystore
+*.jks
+
+# OS
+.DS_Store
+
+# Preview / debug screenshots
+preview_*.png
+.claude_preview_*.png

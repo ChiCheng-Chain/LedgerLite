@@ -11,6 +11,9 @@ object DateUtil {
 
     fun nowMillis(): Long = System.currentTimeMillis()
 
+    /** 本地时区相对 UTC 的毫秒偏移（如 UTC+8 = 28800000）。 */
+    fun tzOffsetMillis(): Long = TimeZone.getDefault().getOffset(System.currentTimeMillis()).toLong()
+
     /** 今日 0 点 epoch millis（本地时区）。 */
     fun startOfToday(): Long = startOfDay(nowMillis())
 

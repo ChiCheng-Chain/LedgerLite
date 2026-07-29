@@ -33,7 +33,7 @@ data class StatsUiState(
     val topCategory: CategorySum? = null,
     val categoryShares: List<CategorySum> = emptyList(),
     val dailyTrend: List<com.ledgerlite.app.data.local.relation.DaySum> = emptyList(),
-    val trend30Days: List<com.ledgerlite.app.data.local.relation.DaySum> = emptyList(),
+    val trend50Days: List<com.ledgerlite.app.data.local.relation.DaySum> = emptyList(),
     val bigItemDaily: Long = 0,
     val bigItemWeekly: Long = 0,
     val isLoading: Boolean = true
@@ -60,9 +60,9 @@ class StatsViewModel(
                 categoryFlow,
                 expenseRepository.observeTotalInRange(start, end),
                 expenseRepository.sumGroupByDay(start, end),
-                expenseRepository.sumGroupByDay(DateUtil.startDaysAgo(29), DateUtil.startOfNextDay())
-            ) { shares, total, daily, last30Days ->
-                StatsPartial(shares, total, daily, last30Days, label, start, end)
+                expenseRepository.sumGroupByDay(DateUtil.startDaysAgo(83), DateUtil.startOfNextDay())
+            ) { shares, total, daily, last50Days ->
+                StatsPartial(shares, total, daily, last50Days, label, start, end)
             }
             // 再 combine 资产成本
             combine(
@@ -78,7 +78,7 @@ class StatsViewModel(
                     topCategory = partial.shares.firstOrNull(),
                     categoryShares = partial.shares,
                     dailyTrend = partial.daily,
-                    trend30Days = partial.last30Days,
+                    trend50Days = partial.last50Days,
                     bigItemDaily = bigItem.totalDaily,
                     bigItemWeekly = bigItem.totalWeekly,
                     isLoading = false
@@ -90,7 +90,7 @@ class StatsViewModel(
         val shares: List<CategorySum>,
         val total: Long,
         val daily: List<com.ledgerlite.app.data.local.relation.DaySum>,
-        val last30Days: List<com.ledgerlite.app.data.local.relation.DaySum>,
+        val last50Days: List<com.ledgerlite.app.data.local.relation.DaySum>,
         val label: String,
         val start: Long,
         val end: Long

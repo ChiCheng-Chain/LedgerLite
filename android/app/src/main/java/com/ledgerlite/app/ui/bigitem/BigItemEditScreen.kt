@@ -204,21 +204,15 @@ fun BigItemEditScreen(
 
     // 日期选择器
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = startDate)
-        androidx.compose.material3.DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { startDate = it }
-                    showDatePicker = false
-                }) { Text("确定") }
+        com.ledgerlite.app.ui.components.AppDatePickerSheet(
+            onDismiss = { showDatePicker = false },
+            onConfirm = { dayStart ->
+                startDate = dayStart
+                showDatePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-            }
-        ) {
-            androidx.compose.material3.DatePicker(state = datePickerState)
-        }
+            initialSelectedDayStart = startDate,
+            title = "选择开始日期"
+        )
     }
 
     // 金额计算器弹窗

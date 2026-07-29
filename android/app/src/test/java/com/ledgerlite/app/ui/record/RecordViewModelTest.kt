@@ -97,7 +97,7 @@ private class FakeExpenseDao : ExpenseDao {
 
     override fun sumGroupByCategory(start: Long, end: Long): Flow<List<CategorySum>> = flow { emit(emptyList()) }
     override fun sumGroupByCategoryFiltered(start: Long, end: Long, categoryId: Long): Flow<List<CategorySum>> = flow { emit(emptyList()) }
-    override fun sumGroupByDay(start: Long, end: Long): Flow<List<DaySum>> = flow { emit(emptyList()) }
+    override fun sumGroupByDay(start: Long, end: Long, tzOffset: Long): Flow<List<DaySum>> = flow { emit(emptyList()) }
     override suspend fun getById(id: Long): ExpenseRecord? = records.value.find { it.id == id }
     override fun observeById(id: Long): Flow<ExpenseRecord?> = records.map { list -> list.find { it.id == id } }
 
@@ -131,5 +131,6 @@ private class FakeCategoryDao(initial: List<Category>) : CategoryDao {
     override suspend fun count(): Int = categories.value.size
     override suspend fun insert(category: Category): Long { TODO("Not yet implemented") }
     override suspend fun update(category: Category) { TODO("Not yet implemented") }
+    override suspend fun updateAll(categories: List<Category>) { TODO("Not yet implemented") }
     override suspend fun delete(id: Long) { TODO("Not yet implemented") }
 }

@@ -38,9 +38,9 @@ class LedgerDatabaseTest {
     }
 
     @Test
-    fun `种子数据插入8个默认分类`() = runTest {
+    fun `种子数据插入13个默认分类`() = runTest {
         val categories = db.categoryDao().observeAll().first()
-        assertEquals(8, categories.size)
+        assertEquals(13, categories.size)
         assertEquals("餐饮", categories[0].name)
         assertEquals("其他", categories.last().name)
         assertTrue(categories.all { it.isDefault })

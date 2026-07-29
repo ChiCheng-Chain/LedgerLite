@@ -39,7 +39,8 @@ class ExpenseRepository(private val dao: ExpenseDao) {
     fun sumGroupByCategoryFiltered(start: Long, end: Long, categoryId: Long): Flow<List<CategorySum>> =
         dao.sumGroupByCategoryFiltered(start, end, categoryId)
 
-    fun sumGroupByDay(start: Long, end: Long): Flow<List<DaySum>> = dao.sumGroupByDay(start, end)
+    fun sumGroupByDay(start: Long, end: Long): Flow<List<DaySum>> =
+        dao.sumGroupByDay(start, end, DateUtil.tzOffsetMillis())
 
     suspend fun getById(id: Long): ExpenseRecord? = dao.getById(id)
 

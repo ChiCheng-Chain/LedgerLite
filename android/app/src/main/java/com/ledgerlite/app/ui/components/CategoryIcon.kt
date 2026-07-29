@@ -3,8 +3,12 @@ package com.ledgerlite.app.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Icecream
+import androidx.compose.material.icons.outlined.LocalGroceryStore
 import androidx.compose.material.icons.outlined.LocalHospital
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Eco
+import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.ShoppingBasket
@@ -24,6 +28,11 @@ object CategoryIcon {
     const val ENTERTAINMENT = "entertainment"
     const val MEDICAL = "medical"
     const val STUDY = "study"
+    const val SNACK = "snack"
+    const val FRUIT = "fruit"
+    const val HOUSING = "housing"
+    const val TELECOM = "telecom"
+    const val SUPERMARKET = "supermarket"
     const val OTHER = "other"
 
     fun vector(key: String): ImageVector? = when (key) {
@@ -34,6 +43,11 @@ object CategoryIcon {
         ENTERTAINMENT -> Icons.Outlined.SportsEsports
         MEDICAL -> Icons.Outlined.LocalHospital
         STUDY -> Icons.AutoMirrored.Outlined.MenuBook
+        SNACK -> Icons.Outlined.Icecream
+        FRUIT -> Icons.Outlined.Eco
+        HOUSING -> Icons.Outlined.Home
+        TELECOM -> Icons.Outlined.Call
+        SUPERMARKET -> Icons.Outlined.LocalGroceryStore
         OTHER -> Icons.Outlined.Category
         else -> null
     }
