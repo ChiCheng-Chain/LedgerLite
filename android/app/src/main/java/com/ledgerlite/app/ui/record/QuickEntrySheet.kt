@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,8 +14,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -49,7 +49,7 @@ import com.ledgerlite.app.util.MoneyUtil
  * 布局：金额展示 → 分类 Chip 行 → 4×3 数字网格(. 0 ⌫)→ 完成按钮。
  * 不做运算，纯输入。完成时用 yuanToCents 转成分存储。
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun QuickEntrySheet(
     categories: List<Category>,
@@ -63,6 +63,7 @@ fun QuickEntrySheet(
     var selectedCategoryId by remember {
         mutableStateOf(presetCategoryId ?: categories.firstOrNull()?.id ?: 0L)
     }
+    var noteInput by remember { mutableStateOf("") }
 
     val cents = MoneyUtil.yuanToCents(amountInput)
     val canSubmit = cents > 0 && selectedCategoryId > 0
@@ -83,10 +84,13 @@ fun QuickEntrySheet(
             // 金额展示区
             AmountDisplay(text = amountInput)
 
-            // 分类 Chip 行（面板内）
+            // 分类区（自动换行，全部展示）
             if (categories.isNotEmpty()) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(categories, key = { it.id }) { category ->
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    categories.forEach { category ->
                         CategoryChip(
                             label = category.name,
                             selected = category.id == selectedCategoryId,
@@ -104,10 +108,22 @@ fun QuickEntrySheet(
 
             Spacer(Modifier.height(16.dp))
 
+            // 备注
+            OutlinedTextField(
+                value = noteInput,
+                onValueChange = { noteInput = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("备注（可选）") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+
             Button(
                 onClick = {
                     if (canSubmit) {
-                        onSubmit(cents, selectedCategoryId, "", System.currentTimeMillis())
+                        onSubmit(cents, selectedCategoryId, noteInput.trim(), System.currentTimeMillis())
                         onDismiss()
                     }
                 },
