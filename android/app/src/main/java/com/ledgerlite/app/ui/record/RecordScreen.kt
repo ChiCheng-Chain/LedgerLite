@@ -89,59 +89,53 @@ private fun RecordContent(
     onCategoryClick: (Long) -> Unit,
     onRecentClick: (Long) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(20.dp))
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp)
+    ) {
+        item { TodayCard(state.todayTotal) }
+        item { Spacer(Modifier.height(12.dp)) }
+        item { MonthCard(state.monthTotal) }
 
-        // 今日支出主卡片（主色容器大色块）
-        TodayCard(state.todayTotal)
-
-        Spacer(Modifier.height(12.dp))
-
-        // 本月支出 次级卡片
-        MonthCard(state.monthTotal)
-
-        Spacer(Modifier.height(20.dp))
-
-        // 常用分类（4 列网格色块）
         if (state.categories.isNotEmpty()) {
-            Text(
-                "常用分类",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(10.dp))
-            CategoryGrid(state.categories.take(8), onClick = onCategoryClick)
+            item {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    "常用分类",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+            item { CategoryGrid(state.categories.take(8), onClick = onCategoryClick) }
+        }
+
+        item {
             Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = onQuickEntry,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+                Spacer(Modifier.width(8.dp))
+                Text("记一笔", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.height(24.dp))
+            Text("最近记录", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
         }
-
-        // 记一笔主按钮
-        Button(
-            onClick = onQuickEntry,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
-            Spacer(Modifier.width(8.dp))
-            Text("记一笔", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // 最近记录
-        Text("最近记录", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
 
         if (state.recentExpenses.isEmpty()) {
-            EmptyRecent()
+            item { EmptyRecent() }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.recentExpenses, key = { it.expense.id }) { item ->
-                    RecentExpenseCard(item)
-                }
+            items(state.recentExpenses, key = { it.expense.id }) { item ->
+                RecentExpenseCard(item)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 
