@@ -129,6 +129,7 @@ private class FakeCategoryDao(initial: List<Category>) : CategoryDao {
     override fun observeRecent(limit: Int): Flow<List<Category>> = categories.map { it.take(limit) }
     override suspend fun getById(id: Long): Category? = categories.value.find { it.id == id }
     override suspend fun count(): Int = categories.value.size
+    override suspend fun maxSortOrder(): Int = categories.value.maxOfOrNull { it.sortOrder } ?: -1
     override suspend fun insert(category: Category): Long { TODO("Not yet implemented") }
     override suspend fun update(category: Category) { TODO("Not yet implemented") }
     override suspend fun updateAll(categories: List<Category>) { TODO("Not yet implemented") }

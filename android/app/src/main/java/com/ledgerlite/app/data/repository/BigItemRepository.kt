@@ -25,6 +25,9 @@ class BigItemRepository(private val dao: BigItemDao) {
         categoryId: Long? = null,
         note: String = ""
     ): Long {
+        require(name.isNotBlank()) { "资产名不能为空" }
+        require(amount > 0) { "金额必须为正" }
+        require(startDate > 0) { "开始日期无效" }
         val now = DateUtil.nowMillis()
         val item = BigItem(
             name = name,
@@ -40,6 +43,9 @@ class BigItemRepository(private val dao: BigItemDao) {
     }
 
     suspend fun update(item: BigItem) {
+        require(item.name.isNotBlank()) { "资产名不能为空" }
+        require(item.amount > 0) { "金额必须为正" }
+        require(item.startDate > 0) { "开始日期无效" }
         dao.update(item.copy(updatedAt = DateUtil.nowMillis()))
     }
 

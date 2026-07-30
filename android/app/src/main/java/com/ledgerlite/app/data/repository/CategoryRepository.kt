@@ -19,7 +19,7 @@ class CategoryRepository(private val dao: CategoryDao) {
             name = name,
             icon = icon,
             color = color,
-            sortOrder = (System.currentTimeMillis() % 1000).toInt(),
+            sortOrder = dao.maxSortOrder() + 1,
             isDefault = false,
             createdAt = now,
             updatedAt = now
