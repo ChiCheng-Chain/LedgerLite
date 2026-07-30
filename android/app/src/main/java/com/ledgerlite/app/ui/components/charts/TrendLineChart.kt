@@ -93,7 +93,9 @@ fun TrendLineChart(
             val fillPath = Path()
             val coords = points.mapIndexed { i, p ->
                 val x = i * stepX
-                val y = chartH - (p.value.toFloat() / maxVal) * chartH * progress.value
+                // 负值钳到 0：支出趋势不表现负数，避免曲线下凹到底边以下
+                val normalized = if (p.value < 0) 0f else p.value.toFloat() / maxVal
+                val y = chartH - normalized * chartH * progress.value
                 Offset(x, y)
             }
             if (coords.isNotEmpty()) {
@@ -106,12 +108,16 @@ fun TrendLineChart(
                         val curr = coords[i]
                         val prevPrev = coords[(i - 2).coerceAtLeast(0)]
                         val next = coords[(i + 1).coerceAtMost(coords.size - 1)]
-                        // 控制点取相邻点中点，张力 0.5
+                        // Catmull-Rom 控制点（张力 0.5）
                         val c1x = prev.x + (curr.x - prevPrev.x) / 6f
                         val c1y = prev.y + (curr.y - prevPrev.y) / 6f
                         val c2x = curr.x - (next.x - prev.x) / 6f
                         val c2y = curr.y - (next.y - prev.y) / 6f
-                        path.cubicTo(c1x, c1y, c2x, c2y, curr.x, curr.y)
+                        // 钳制控制点 y 到 [min, max] 局部范围，消除 Catmull-Rom 过冲
+                        // 避免相邻正数据点之间出现低于实际值的凹陷
+                        val yMin = minOf(prev.y, curr.y)
+                        val yMax = maxOf(prev.y, curr.y)
+                        path.cubicTo(c1x, c1y.coerceIn(yMin, yMax), c2x, c2y.coerceIn(yMin, yMax), curr.x, curr.y)
                     }
                 }
                 fillPath.addPath(path)
