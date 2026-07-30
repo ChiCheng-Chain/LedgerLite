@@ -8,7 +8,9 @@ import com.ledgerlite.app.domain.model.BigItemStatus
  * 使用天数按实际日历：
  * - active（使用中）：今天 - startDate + 1（含首尾，以本地时区 0 点计）
  * - ended（已结束）：endedAt - startDate + 1
- * 日均 = amount / 天数（整数除法向下取整）。周均 = 日均 * 7。
+ * 日均 = amount / 天数（整数除法向下取整）。
+ * 周均 = 总额 / 已用周数（向上取整，不足 1 周算 1 周）：用了 1 天或 7 天都是 1 周，
+ *   用 8 天是 2 周。这样反映「平均每周分摊多少」，而非把单日成本外推到整周。
  */
 object AmortizationUtil {
 
@@ -30,8 +32,18 @@ object AmortizationUtil {
         return item.amount / days
     }
 
-    /** 周均成本（分）= 日均 * 7。 */
-    fun weeklyCost(item: BigItem, now: Long = DateUtil.nowMillis()): Long = dailyCost(item, now) * 7
+    /** 已用周数（向上取整，不足 1 周算 1 周）。 */
+    fun totalWeeks(item: BigItem, now: Long = DateUtil.nowMillis()): Long {
+        val days = totalDays(item, now)
+        return (days + 6) / 7
+    }
+
+    /** 周均成本（分）= 总额 / 已用周数（向上取整）。 */
+    fun weeklyCost(item: BigItem, now: Long = DateUtil.nowMillis()): Long {
+        val weeks = totalWeeks(item, now)
+        if (weeks <= 0) return 0
+        return item.amount / weeks
+    }
 
     /** 是否计入当前使用成本（仅 active）。 */
     fun isActive(item: BigItem): Boolean = item.status == BigItemStatus.active

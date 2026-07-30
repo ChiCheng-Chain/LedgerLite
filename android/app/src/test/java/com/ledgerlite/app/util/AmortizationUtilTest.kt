@@ -65,7 +65,8 @@ class AmortizationUtilTest {
         val start = today - 2L * 86_400_000L // 共 3 天
         val it = item(100, start)
         assertEquals(33, AmortizationUtil.dailyCost(it, now = today))
-        assertEquals(33 * 7, AmortizationUtil.weeklyCost(it, now = today))
+        // 3 天 → 1 周（向上取整），周均 = 100 / 1 = 100
+        assertEquals(100, AmortizationUtil.weeklyCost(it, now = today))
     }
 
     @Test
@@ -78,7 +79,8 @@ class AmortizationUtilTest {
         assertFalse(AmortizationUtil.isActive(ended))
         // active 日均 30000/10=3000，ended 不计入
         assertEquals(3000, AmortizationUtil.totalDailyCost(listOf(active, ended), now = today))
-        assertEquals(21000, AmortizationUtil.totalWeeklyCost(listOf(active, ended), now = today))
+        // 10 天 → 2 周，周均 = 30000 / 2 = 15000
+        assertEquals(15000, AmortizationUtil.totalWeeklyCost(listOf(active, ended), now = today))
     }
 
     @Test
