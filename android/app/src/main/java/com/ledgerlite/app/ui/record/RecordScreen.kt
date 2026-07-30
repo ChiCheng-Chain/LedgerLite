@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +52,7 @@ import com.ledgerlite.app.data.local.entity.Category
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.ui.components.AmountText
 import com.ledgerlite.app.ui.components.CategoryIcon
+import com.ledgerlite.app.ui.ledger.ExpenseEditSheet
 import com.ledgerlite.app.util.DateUtil
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,13 +67,15 @@ fun RecordScreen(bottomInset: Dp = 0.dp) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     var showEntrySheet by remember { mutableStateOf(false) }
     var presetCategoryId by remember { mutableStateOf<Long?>(null) }
+    var editing by remember { mutableStateOf<ExpenseWithCategory?>(null) }
+    var pendingDelete by remember { mutableStateOf<ExpenseWithCategory?>(null) }
 
     RecordContent(
         state = state,
         bottomInset = bottomInset,
         onQuickEntry = { presetCategoryId = null; showEntrySheet = true },
         onCategoryClick = { id -> presetCategoryId = id; showEntrySheet = true },
-        onRecentClick = { /* 后续接流水编辑，MVP 先空 */ }
+        onRecentClick = { item -> editing = item }
     )
 
     if (showEntrySheet) {
@@ -83,6 +88,39 @@ fun RecordScreen(bottomInset: Dp = 0.dp) {
             presetCategoryId = presetCategoryId
         )
     }
+
+    editing?.let { item ->
+        ExpenseEditSheet(
+            record = item.expense,
+            categories = state.categories,
+            onDismiss = { editing = null },
+            onSave = { amount, categoryId, note, occurredAt ->
+                vm.updateExpense(item.expense.copy(amount = amount, categoryId = categoryId, note = note, occurredAt = occurredAt))
+                editing = null
+            },
+            onDelete = {
+                pendingDelete = item
+                editing = null
+            }
+        )
+    }
+
+    pendingDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("删除记录") },
+            text = { Text("删除这条流水？此操作不可撤销。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteExpense(item.expense.id)
+                    pendingDelete = null
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("取消") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -91,38 +129,38 @@ private fun RecordContent(
     bottomInset: Dp,
     onQuickEntry: () -> Unit,
     onCategoryClick: (Long) -> Unit,
-    onRecentClick: (Long) -> Unit
+    onRecentClick: (ExpenseWithCategory) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             top = 20.dp,
             bottom = 20.dp + bottomInset
         )
     ) {
         item { TodayCard(state.todayTotal) }
-        item { Spacer(Modifier.height(12.dp)) }
+        item { Spacer(Modifier.height(8.dp)) }
         item { MonthCard(state.monthTotal) }
 
         if (state.categories.isNotEmpty()) {
             item {
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(16.dp))
                 Text(
                     "常用分类",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
             }
             item { CategoryGrid(state.categories.take(8), onClick = onCategoryClick) }
         }
 
         item {
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
             Button(
                 onClick = onQuickEntry,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
@@ -130,19 +168,19 @@ private fun RecordContent(
                 Spacer(Modifier.width(8.dp))
                 Text("记一笔", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Text("最近记录", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
         }
 
         if (state.recentExpenses.isEmpty()) {
             item { EmptyRecent() }
         } else {
             items(state.recentExpenses, key = { it.expense.id }) { item ->
-                RecentExpenseCard(item)
+                RecentExpenseCard(item, onClick = { onRecentClick(item) })
             }
         }
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
@@ -154,7 +192,7 @@ private fun TodayCard(todayCents: Long) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 "今日支出",
                 style = MaterialTheme.typography.labelLarge,
@@ -163,7 +201,7 @@ private fun TodayCard(todayCents: Long) {
             Spacer(Modifier.height(4.dp))
             AmountText(
                 cents = todayCents,
-                fontSize = 40.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -180,7 +218,7 @@ private fun MonthCard(monthCents: Long) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -205,7 +243,7 @@ private fun CategoryGrid(categories: List<Category>, onClick: (Long) -> Unit) {
             // 不足 4 个补占位
             repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -218,7 +256,7 @@ private fun CategoryBlock(category: Category, modifier: Modifier = Modifier, onC
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(48.dp).background(accent.copy(alpha = 0.15f), CircleShape),
+            modifier = Modifier.size(40.dp).background(accent.copy(alpha = 0.15f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             if (iconVector != null) {
@@ -226,13 +264,13 @@ private fun CategoryBlock(category: Category, modifier: Modifier = Modifier, onC
                     imageVector = iconVector,
                     contentDescription = null,
                     tint = accent,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             } else {
-                Box(modifier = Modifier.size(20.dp).background(accent, CircleShape))
+                Box(modifier = Modifier.size(18.dp).background(accent, CircleShape))
             }
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             category.name,
             style = MaterialTheme.typography.labelSmall,
@@ -260,16 +298,16 @@ private fun EmptyRecent() {
 }
 
 @Composable
-private fun RecentExpenseCard(item: ExpenseWithCategory) {
+private fun RecentExpenseCard(item: ExpenseWithCategory, onClick: () -> Unit = {}) {
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

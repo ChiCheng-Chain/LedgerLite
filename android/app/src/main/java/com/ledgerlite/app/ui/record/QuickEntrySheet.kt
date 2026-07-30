@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backspace
 import androidx.compose.material3.Button
@@ -98,6 +100,7 @@ fun QuickEntrySheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 16.dp)
                 .navigationBarsPadding()
@@ -120,6 +123,7 @@ fun QuickEntrySheet(
 
             // 分类区（自动换行，全部展示）
             if (categories.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -142,17 +146,17 @@ fun QuickEntrySheet(
 
             Spacer(Modifier.height(12.dp))
 
-            // 备注
+            // 备注（与流水编辑面板位置一致，置于键盘下方）
             OutlinedTextField(
                 value = noteInput,
                 onValueChange = { noteInput = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("备注（可选）") },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(8.dp)
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             Button(
                 onClick = {

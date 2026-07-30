@@ -52,8 +52,8 @@ val LedgerTypography = Typography(
     ),
 )
 
-// 金额专用等宽样式（数字部分）
+// 金额专用样式：用默认字体，避免 Monospace 下小数点占满一格导致点两侧间距过大。
 val AmountNumberStyle = TextStyle(
-    fontFamily = FontFamily.Monospace,
+    fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
 )

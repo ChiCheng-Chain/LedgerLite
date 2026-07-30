@@ -27,15 +27,17 @@ fun AmountText(
     fontWeight: FontWeight = FontWeight.SemiBold,
     currencySymbol: String = "¥",
     showSign: Boolean = false,
-    showDecimals: Boolean = true,
+    showDecimals: Boolean? = null,
     withGrouping: Boolean = true,
 ) {
+    val cfg = LocalDecimalConfig.current
+    val showDecimalsFinal = showDecimals ?: cfg.show
     val negative = cents < 0
     val abs = if (negative) -cents else cents
-    val yuanStr = MoneyUtil.centsToYuan(abs, withGrouping = withGrouping)
+    val yuanStr = MoneyUtil.centsToYuan(abs, withGrouping = withGrouping, decimalPlaces = cfg.places)
     val parts = yuanStr.split(".")
     val intPart = parts[0]
-    val fracPart = if (parts.size > 1) parts[1] else "00"
+    val fracPart = if (parts.size > 1) parts[1] else ""
 
     val sign = when {
         showSign && negative -> "−"
@@ -61,7 +63,7 @@ fun AmountText(
             fontWeight = fontWeight,
             modifier = Modifier.alignByBaseline()
         )
-        if (showDecimals) {
+        if (showDecimalsFinal && fracPart.isNotEmpty()) {
             Text(
                 text = ".$fracPart",
                 color = color.copy(alpha = 0.75f),

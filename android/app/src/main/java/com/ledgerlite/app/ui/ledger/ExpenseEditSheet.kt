@@ -57,7 +57,7 @@ fun ExpenseEditSheet(
     onDelete: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    // 预填金额：分转元字符串（不带千分位），如 1234 → "12.34"
+    // 预填金额：分 → 元字符串（不带千分位），如 1234 分 → "12.34"
     var amountInput by remember {
         mutableStateOf(MoneyUtil.centsToYuan(record.amount, withGrouping = false))
     }

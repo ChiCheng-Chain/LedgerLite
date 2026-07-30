@@ -21,12 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ledgerlite.app.util.MoneyUtil
 
 /**
  * 金额输入底部弹窗。用于全屏页面（如资产编辑）的金额字段：点字段弹出，
  * 内含金额展示 + 计算器面板 + 确定按钮。确定后回填。
  * @param initial 初始金额串（元字符串，如 "12.34"）
- * @param onConfirm 确定回调，返回新串
+ * @param onConfirm 确定回调，返回元字符串
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +38,7 @@ fun AmountInputSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var input by remember { mutableStateOf(initial) }
+    val cents = MoneyUtil.yuanToCents(input)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -52,9 +54,9 @@ fun AmountInputSheet(
             AmountKeypad(current = input, onKey = { input = it })
             Spacer(Modifier.height(16.dp))
             Button(
-                onClick = { onConfirm(input) },
+                onClick = { onConfirm(MoneyUtil.centsToYuan(cents, withGrouping = false)) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled = input.isNotEmpty() && input != "." && input.toDoubleOrNull()?.let { it > 0 } ?: false,
+                enabled = cents > 0,
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {

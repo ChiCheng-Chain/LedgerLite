@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ledgerlite.app.data.local.entity.Category
+import com.ledgerlite.app.data.local.entity.ExpenseRecord
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
@@ -45,6 +46,18 @@ class RecordViewModel(
     fun createExpense(amount: Long, categoryId: Long, note: String, occurredAt: Long) {
         viewModelScope.launch {
             expenseRepository.create(amount, categoryId, note, occurredAt)
+        }
+    }
+
+    fun updateExpense(record: ExpenseRecord) {
+        viewModelScope.launch {
+            expenseRepository.update(record)
+        }
+    }
+
+    fun deleteExpense(id: Long) {
+        viewModelScope.launch {
+            expenseRepository.softDelete(id)
         }
     }
 
