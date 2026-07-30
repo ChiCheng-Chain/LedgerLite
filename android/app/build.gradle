@@ -70,6 +70,12 @@ android {
             includeAndroidResources = true
         }
     }
+
+    applicationVariants.configureEach {
+        outputs.configureEach {
+            outputFileName = "LedgerLite.apk"
+        }
+    }
 }
 
 ksp {
