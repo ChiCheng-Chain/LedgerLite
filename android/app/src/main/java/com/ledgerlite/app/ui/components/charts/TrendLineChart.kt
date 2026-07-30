@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ledgerlite.app.ui.components.LocalDecimalConfig
 import com.ledgerlite.app.ui.theme.AmountNumberStyle
 import com.ledgerlite.app.util.MoneyUtil
 import kotlinx.coroutines.launch
@@ -87,7 +88,7 @@ fun TrendLineChart(
             val chartH = h - padBottom
             val stepX = if (points.size > 1) w / (points.size - 1) else w / 2
 
-            // 构建路径
+            // 构建路径（Catmull-Rom 平滑曲线）
             val path = Path()
             val fillPath = Path()
             val coords = points.mapIndexed { i, p ->
@@ -97,7 +98,22 @@ fun TrendLineChart(
             }
             if (coords.isNotEmpty()) {
                 path.moveTo(coords[0].x, coords[0].y)
-                coords.drop(1).forEach { path.lineTo(it.x, it.y) }
+                if (coords.size == 1) {
+                    // 单点：画一个点即可
+                } else {
+                    for (i in 1 until coords.size) {
+                        val prev = coords[i - 1]
+                        val curr = coords[i]
+                        val prevPrev = coords[(i - 2).coerceAtLeast(0)]
+                        val next = coords[(i + 1).coerceAtMost(coords.size - 1)]
+                        // 控制点取相邻点中点，张力 0.5
+                        val c1x = prev.x + (curr.x - prevPrev.x) / 6f
+                        val c1y = prev.y + (curr.y - prevPrev.y) / 6f
+                        val c2x = curr.x - (next.x - prev.x) / 6f
+                        val c2y = curr.y - (next.y - prev.y) / 6f
+                        path.cubicTo(c1x, c1y, c2x, c2y, curr.x, curr.y)
+                    }
+                }
                 fillPath.addPath(path)
                 fillPath.lineTo(coords.last().x, chartH)
                 fillPath.lineTo(coords.first().x, chartH)
@@ -116,11 +132,28 @@ fun TrendLineChart(
             // 折线
             drawPath(path, color = lineColor, style = Stroke(width = 3f))
 
-            // 触点高亮
+            // 触点竖直辅助线（虚线）
             if (touchedIndex in points.indices) {
                 val c = coords[touchedIndex]
-                drawCircle(color = lineColor, radius = 6f, center = c)
-                drawCircle(color = Color.White, radius = 3f, center = c)
+                val dashEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f))
+                drawLine(
+                    color = lineColor.copy(alpha = 0.4f),
+                    start = Offset(c.x, c.y),
+                    end = Offset(c.x, chartH),
+                    strokeWidth = 1.5f,
+                    pathEffect = dashEffect
+                )
+            }
+
+            // 每个数据点小圆点（默认低饱和，触点高亮放大）
+            coords.forEachIndexed { i, c ->
+                if (i == touchedIndex) {
+                    drawCircle(color = lineColor, radius = 7f, center = c)
+                    drawCircle(color = Color.White, radius = 3.5f, center = c)
+                } else {
+                    drawCircle(color = lineColor.copy(alpha = 0.55f), radius = 3f, center = c)
+                    drawCircle(color = Color.White, radius = 1.5f, center = c)
+                }
             }
         }
 
@@ -132,7 +165,7 @@ fun TrendLineChart(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${p.label}  ¥${MoneyUtil.centsToYuan(p.value)}",
+                    text = "${p.label}  ¥${MoneyUtil.centsToYuan(p.value, decimalPlaces = LocalDecimalConfig.current.run { if (show) places else 0 })}",
                     style = AmountNumberStyle.copy(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 13.sp,

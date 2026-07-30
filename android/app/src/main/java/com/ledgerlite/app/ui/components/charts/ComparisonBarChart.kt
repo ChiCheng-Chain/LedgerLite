@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ledgerlite.app.ui.components.LocalDecimalConfig
 import com.ledgerlite.app.ui.theme.AmountNumberStyle
 import com.ledgerlite.app.util.MoneyUtil
 import kotlin.math.max
@@ -98,7 +99,7 @@ fun ComparisonBarChart(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "${b.label}  ¥${MoneyUtil.centsToYuan(b.value)}",
+                    "${b.label}  ¥${MoneyUtil.centsToYuan(b.value, decimalPlaces = LocalDecimalConfig.current.run { if (show) places else 0 })}",
                     style = AmountNumberStyle.copy(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 13.sp,
