@@ -26,12 +26,14 @@ class SettingsRepository(context: Context) {
         val DEFAULT_HOME = stringPreferencesKey("default_home")
         val CURRENCY_SYMBOL = stringPreferencesKey("currency_symbol")
         val SHOW_DECIMALS = booleanPreferencesKey("show_decimals")
+        val DECIMAL_PLACES = intPreferencesKey("decimal_places")
         val RECENT_LIMIT = intPreferencesKey("recent_limit")
     }
 
     val defaultHome: Flow<String> = dataStore.data.map { it[Keys.DEFAULT_HOME] ?: "record" }
     val currencySymbol: Flow<String> = dataStore.data.map { it[Keys.CURRENCY_SYMBOL] ?: "¥" }
     val showDecimals: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_DECIMALS] ?: true }
+    val decimalPlaces: Flow<Int> = dataStore.data.map { (it[Keys.DECIMAL_PLACES] ?: 2).coerceIn(1, 2) }
     val recentLimit: Flow<Int> = dataStore.data.map { it[Keys.RECENT_LIMIT] ?: 5 }
 
     suspend fun setDefaultHome(value: String) {
@@ -44,6 +46,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setShowDecimals(value: Boolean) {
         dataStore.edit { it[Keys.SHOW_DECIMALS] = value }
+    }
+
+    suspend fun setDecimalPlaces(value: Int) {
+        dataStore.edit { it[Keys.DECIMAL_PLACES] = value.coerceIn(1, 2) }
     }
 
     suspend fun setRecentLimit(value: Int) {

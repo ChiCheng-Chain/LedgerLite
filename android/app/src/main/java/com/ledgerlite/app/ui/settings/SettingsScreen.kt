@@ -47,6 +47,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenCategoryManage: () -> Unit) {
     val defaultHome by settings.defaultHome.collectAsStateWithLifecycle(initialValue = "record")
     val currencySymbol by settings.currencySymbol.collectAsStateWithLifecycle(initialValue = "¥")
     val showDecimals by settings.showDecimals.collectAsStateWithLifecycle(initialValue = true)
+    val decimalPlaces by settings.decimalPlaces.collectAsStateWithLifecycle(initialValue = 2)
     val recentLimit by settings.recentLimit.collectAsStateWithLifecycle(initialValue = 5)
 
     var currencyInput by remember(currencySymbol) { mutableStateOf(currencySymbol) }
@@ -115,6 +116,25 @@ fun SettingsScreen(onBack: () -> Unit, onOpenCategoryManage: () -> Unit) {
                     checked = showDecimals,
                     onCheckedChange = { v -> scope.launch { settings.setShowDecimals(v) } }
                 )
+            }
+
+            // 小数位数（仅显示小数时可选）
+            if (showDecimals) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("小数位数", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    listOf(1 to "1 位", 2 to "2 位").forEach { (n, label) ->
+                        FilterChip(
+                            selected = decimalPlaces == n,
+                            onClick = { scope.launch { settings.setDecimalPlaces(n) } },
+                            label = { Text(label) }
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))

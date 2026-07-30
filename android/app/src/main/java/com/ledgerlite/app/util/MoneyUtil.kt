@@ -6,14 +6,40 @@ package com.ledgerlite.app.util
  */
 object MoneyUtil {
 
-    /** 分 → 元字符串，固定两位小数，带千分位。 */
-    fun centsToYuan(cents: Long, withGrouping: Boolean = true): String {
+    /**
+     * 分 → 元字符串。decimalPlaces 控制小数位数：
+     * - 2：固定两位（1234 → "12.34"）
+     * - 1：固定一位，截断（1234 → "12.3"）
+     * - 0：四舍五入到元（1250 → "13"），不输出小数段
+     * withGrouping 控制千分位逗号。
+     */
+    fun centsToYuan(cents: Long, withGrouping: Boolean = true, decimalPlaces: Int = 2): String {
         val negative = cents < 0
         val abs = if (negative) -cents else cents
-        val yuan = abs / 100
-        val frac = abs % 100
-        val yuanStr = if (withGrouping) formatGrouping(yuan) else yuan.toString()
-        val result = "$yuanStr.${frac.toString().padStart(2, '0')}"
+        val places = decimalPlaces.coerceIn(0, 2)
+        val yuanStr: String
+        val fracStr: String
+        when (places) {
+            0 -> {
+                val yuan = (abs + 50) / 100
+                yuanStr = if (withGrouping) formatGrouping(yuan) else yuan.toString()
+                fracStr = ""
+            }
+            1 -> {
+                val jiao = abs / 10                  // 1234 分 → 123 角
+                val yuan = jiao / 10                 // 12 元
+                val frac = jiao % 10                 // 3 角
+                yuanStr = if (withGrouping) formatGrouping(yuan) else yuan.toString()
+                fracStr = ".$frac"
+            }
+            else -> {
+                val yuan = abs / 100
+                val frac = abs % 100
+                yuanStr = if (withGrouping) formatGrouping(yuan) else yuan.toString()
+                fracStr = ".${frac.toString().padStart(2, '0')}"
+            }
+        }
+        val result = yuanStr + fracStr
         return if (negative) "-$result" else result
     }
 

@@ -311,8 +311,7 @@ private fun LedgerContent(
                         cents = state.totalAmount,
                         fontSize = 22.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Bold,
-                        showDecimals = false
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -333,8 +332,7 @@ private fun LedgerContent(
                     AmountText(
                         cents = group.dayTotal,
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        showDecimals = false
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
