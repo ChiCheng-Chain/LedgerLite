@@ -51,6 +51,8 @@ private val tabs = listOf(RecordTab, LedgerTab, BigItemTab, StatsTab)
 object Routes {
     const val SETTINGS = "settings"
     const val CATEGORY_MANAGE = "category_manage"
+    /** 一级 Tab 路由，供「默认首页」设置校验取值。 */
+    val TAB_ROUTES = setOf("record", "ledger", "bigitem", "stats")
     const val BIG_ITEM_EDIT = "big_item_edit?itemId={itemId}"
     const val BIG_ITEM_DETAIL = "big_item_detail/{itemId}"
     fun bigItemEdit(itemId: Long? = null): String {
@@ -61,7 +63,7 @@ object Routes {
 }
 
 @Composable
-fun AppRoot() {
+fun AppRoot(startTabRoute: String = RecordTab.route) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -105,7 +107,7 @@ fun AppRoot() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = RecordTab.route,
+            startDestination = startTabRoute,
             modifier = Modifier.fillMaxSize()
         ) {
             composable(RecordTab.route) {
