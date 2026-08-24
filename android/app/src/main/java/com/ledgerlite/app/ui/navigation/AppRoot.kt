@@ -21,7 +21,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -193,15 +192,5 @@ private fun RecordTabScaffold(
         Box(modifier = Modifier.padding(padding)) {
             RecordScreen(bottomInset = innerPadding.calculateBottomPadding())
         }
-    }
-}
-
-@Composable
-private fun Placeholder(label: String, padding: androidx.compose.foundation.layout.PaddingValues) {
-    Box(
-        modifier = Modifier.fillMaxSize().padding(padding),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("$label（待实现）")
     }
 }
