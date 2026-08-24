@@ -36,7 +36,6 @@ import com.ledgerlite.app.ui.bigitem.BigItemEditScreen
 import com.ledgerlite.app.ui.bigitem.BigItemScreen
 import com.ledgerlite.app.ui.ledger.LedgerScreen
 import com.ledgerlite.app.ui.record.RecordScreen
-import com.ledgerlite.app.ui.settings.CategoryManageScreen
 import com.ledgerlite.app.ui.settings.SettingsScreen
 import com.ledgerlite.app.ui.stats.StatsScreen
 
@@ -50,7 +49,6 @@ private val tabs = listOf(RecordTab, LedgerTab, BigItemTab, StatsTab)
 
 object Routes {
     const val SETTINGS = "settings"
-    const val CATEGORY_MANAGE = "category_manage"
     /** 一级 Tab 路由，供「默认首页」设置校验取值。 */
     val TAB_ROUTES = setOf("record", "ledger", "bigitem", "stats")
     const val BIG_ITEM_EDIT = "big_item_edit?itemId={itemId}"
@@ -136,12 +134,8 @@ fun AppRoot(startTabRoute: String = RecordTab.route) {
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenCategoryManage = { navController.navigate(Routes.CATEGORY_MANAGE) }
+                    onBack = { navController.popBackStack() }
                 )
-            }
-            composable(Routes.CATEGORY_MANAGE) {
-                CategoryManageScreen(onBack = { navController.popBackStack() })
             }
             composable(
                 route = Routes.BIG_ITEM_EDIT,

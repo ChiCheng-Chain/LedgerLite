@@ -84,7 +84,11 @@ fun CategoryManageScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                ),
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
             )
         },
         floatingActionButton = {

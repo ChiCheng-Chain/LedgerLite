@@ -53,6 +53,7 @@ import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.ui.components.AmountText
 import com.ledgerlite.app.ui.components.CategoryIcon
 import com.ledgerlite.app.ui.ledger.ExpenseEditSheet
+import com.ledgerlite.app.ui.settings.CategoryManageScreen
 import com.ledgerlite.app.util.DateUtil
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -71,14 +72,20 @@ fun RecordScreen(bottomInset: Dp = 0.dp) {
     var presetCategoryId by remember { mutableStateOf<Long?>(null) }
     var editing by remember { mutableStateOf<ExpenseWithCategory?>(null) }
     var pendingDelete by remember { mutableStateOf<ExpenseWithCategory?>(null) }
+    var showCategoryManage by remember { mutableStateOf(false) }
 
     RecordContent(
         state = state,
         bottomInset = bottomInset,
         onQuickEntry = { presetCategoryId = null; showEntrySheet = true },
         onCategoryClick = { id -> presetCategoryId = id; showEntrySheet = true },
-        onRecentClick = { item -> editing = item }
+        onRecentClick = { item -> editing = item },
+        onOpenCategoryManage = { showCategoryManage = true }
     )
+
+    if (showCategoryManage) {
+        CategoryManageScreen(onBack = { showCategoryManage = false })
+    }
 
     if (showEntrySheet) {
         QuickEntrySheet(
@@ -131,14 +138,15 @@ private fun RecordContent(
     bottomInset: Dp,
     onQuickEntry: () -> Unit,
     onCategoryClick: (Long) -> Unit,
-    onRecentClick: (ExpenseWithCategory) -> Unit
+    onRecentClick: (ExpenseWithCategory) -> Unit,
+    onOpenCategoryManage: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             top = 20.dp,
-            bottom = 20.dp + bottomInset
+            bottom = 100.dp + bottomInset
         )
     ) {
         item { TodayCard(state.todayTotal) }
@@ -148,11 +156,23 @@ private fun RecordContent(
         if (state.categories.isNotEmpty()) {
             item {
                 Spacer(Modifier.height(16.dp))
-                Text(
-                    "常用分类",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "常用分类",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "管理",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onOpenCategoryManage)
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
             }
             item { CategoryGrid(state.categories.take(8), onClick = onCategoryClick) }
