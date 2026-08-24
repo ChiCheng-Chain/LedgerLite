@@ -37,7 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ledgerlite.app.LedgerLiteApp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val container = (LocalContext.current.applicationContext as LedgerLiteApp).container
@@ -83,17 +83,17 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
             Spacer(Modifier.height(8.dp))
 
             // 货币符号：预置常用符号一键选择，另支持自定义
             Text("货币符号", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val presetSymbols = listOf("¥", "$", "€", "£", "₩", "JP¥")
             val isPreset = currencySymbol in presetSymbols
-            Row(
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 presetSymbols.forEach { symbol ->
                     FilterChip(
@@ -142,7 +142,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
             Spacer(Modifier.height(8.dp))
 
             // 是否显示小数
@@ -178,7 +178,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
             Spacer(Modifier.height(8.dp))
 
             // 首页最近记录数量
@@ -194,7 +194,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
             Spacer(Modifier.height(8.dp))
         }
     }
