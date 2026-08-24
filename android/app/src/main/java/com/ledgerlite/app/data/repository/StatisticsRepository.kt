@@ -6,7 +6,7 @@ import com.ledgerlite.app.data.local.relation.DaySum
 import com.ledgerlite.app.util.AmortizationUtil
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 
 /**
  * 只读聚合，跨 Expense + BigItem。不直接写库。
@@ -39,11 +39,11 @@ class StatisticsRepository(
     )
 
     fun observeBigItemCostSummary(): Flow<BigItemCostSummary> =
-        bigItemRepository.observeActive().map { items ->
+        combine(bigItemRepository.observeActive(), DateUtil.observeDayStart()) { items, dayStart ->
             BigItemCostSummary(
                 activeItems = items,
-                totalDaily = AmortizationUtil.totalDailyCost(items),
-                totalWeekly = AmortizationUtil.totalWeeklyCost(items)
+                totalDaily = AmortizationUtil.totalDailyCost(items, dayStart),
+                totalWeekly = AmortizationUtil.totalWeeklyCost(items, dayStart)
             )
         }
 }

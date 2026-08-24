@@ -8,9 +8,13 @@ import com.ledgerlite.app.data.local.entity.ExpenseRecord
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
+import com.ledgerlite.app.util.DateUtil
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -22,25 +26,30 @@ data class RecordUiState(
     val isLoading: Boolean = true
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RecordViewModel(
     private val expenseRepository: ExpenseRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    /** 跨 0 点重发当前日，驱动「今日/本月」窗口跨天重算。测试可注入有限流。 */
+    private val dayStartFlow: Flow<Long> = DateUtil.observeDayStart()
 ) : ViewModel() {
 
     val uiState: StateFlow<RecordUiState> =
-        combine(
-            expenseRepository.observeTodayTotal(),
-            expenseRepository.observeMonthTotal(),
-            expenseRepository.observeRecent(5),
-            categoryRepository.observeAll()
-        ) { today, month, recent, categories ->
-            RecordUiState(
-                todayTotal = today,
-                monthTotal = month,
-                recentExpenses = recent,
-                categories = categories,
-                isLoading = false
-            )
+        dayStartFlow.flatMapLatest {
+            combine(
+                expenseRepository.observeTodayTotal(),
+                expenseRepository.observeMonthTotal(),
+                expenseRepository.observeRecent(5),
+                categoryRepository.observeAll()
+            ) { today, month, recent, categories ->
+                RecordUiState(
+                    todayTotal = today,
+                    monthTotal = month,
+                    recentExpenses = recent,
+                    categories = categories,
+                    isLoading = false
+                )
+            }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, RecordUiState())
 
     fun createExpense(amount: Long, categoryId: Long, note: String, occurredAt: Long) {

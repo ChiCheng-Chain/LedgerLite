@@ -8,6 +8,7 @@ import com.ledgerlite.app.data.repository.ExpenseRepository
 import com.ledgerlite.app.data.repository.StatisticsRepository
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,21 +43,24 @@ data class StatsUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class StatsViewModel(
     private val statisticsRepository: StatisticsRepository,
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
+    /** 跨 0 点重发当前日，驱动相对窗口与摊销成本跨天重算。测试可注入有限流。 */
+    private val dayStartFlow: Flow<Long> = DateUtil.observeDayStart()
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(StatsFilter())
 
     val uiState: StateFlow<StatsUiState> =
-        _filter.flatMapLatest { filter ->
-            val (start, end, label) = timeRange(filter)
+        combine(_filter, dayStartFlow) { filter, _ -> filter }
+            .flatMapLatest { filter ->
+                val (start, end, label) = timeRange(filter)
             val categoryFlow = if (filter.categoryId != null) {
                 expenseRepository.sumGroupByCategoryFiltered(start, end, filter.categoryId)
             } else {
                 expenseRepository.sumGroupByCategory(start, end)
             }
             // 主数据：4 路 combine（含近 28 天日数据用于趋势图）
-            val mainFlow = combine(
+                val mainFlow = combine(
                 categoryFlow,
                 expenseRepository.observeTotalInRange(start, end),
                 expenseRepository.sumGroupByDay(start, end),
@@ -64,27 +68,27 @@ class StatsViewModel(
             ) { shares, total, daily, last50Days ->
                 StatsPartial(shares, total, daily, last50Days, label, start, end)
             }
-            // 再 combine 资产成本
-            combine(
-                mainFlow,
-                statisticsRepository.observeBigItemCostSummary()
-            ) { partial, bigItem ->
-                val days = ((partial.end - partial.start) / 86_400_000L).coerceAtLeast(1)
-                StatsUiState(
-                    filter = filter,
-                    rangeLabel = partial.label,
-                    total = partial.total,
-                    dailyAvg = if (partial.total > 0) partial.total / days else 0,
-                    topCategory = partial.shares.firstOrNull(),
-                    categoryShares = partial.shares,
-                    dailyTrend = partial.daily,
-                    trend50Days = partial.last50Days,
-                    bigItemDaily = bigItem.totalDaily,
-                    bigItemWeekly = bigItem.totalWeekly,
-                    isLoading = false
-                )
-            }
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, StatsUiState())
+                // 再 combine 资产成本
+                combine(
+                    mainFlow,
+                    statisticsRepository.observeBigItemCostSummary()
+                ) { partial, bigItem ->
+                    val days = ((partial.end - partial.start) / 86_400_000L).coerceAtLeast(1)
+                    StatsUiState(
+                        filter = filter,
+                        rangeLabel = partial.label,
+                        total = partial.total,
+                        dailyAvg = if (partial.total > 0) partial.total / days else 0,
+                        topCategory = partial.shares.firstOrNull(),
+                        categoryShares = partial.shares,
+                        dailyTrend = partial.daily,
+                        trend50Days = partial.last50Days,
+                        bigItemDaily = bigItem.totalDaily,
+                        bigItemWeekly = bigItem.totalWeekly,
+                        isLoading = false
+                    )
+                }
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, StatsUiState())
 
     private data class StatsPartial(
         val shares: List<CategorySum>,

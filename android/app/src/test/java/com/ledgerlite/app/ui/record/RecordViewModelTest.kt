@@ -9,6 +9,7 @@ import com.ledgerlite.app.data.local.relation.DaySum
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
+import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -47,7 +49,9 @@ class RecordViewModelTest {
         ))
         vm = RecordViewModel(
             ExpenseRepository(fakeExpenseDao),
-            CategoryRepository(fakeCategoryDao)
+            CategoryRepository(fakeCategoryDao),
+            // 注入有限流，避免默认 observeDayStart 的无限 delay 卡死 advanceUntilIdle
+            dayStartFlow = flowOf(DateUtil.startOfToday())
         )
     }
 

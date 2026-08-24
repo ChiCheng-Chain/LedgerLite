@@ -1,5 +1,8 @@
 package com.ledgerlite.app.util
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -74,4 +77,20 @@ object DateUtil {
     /** N 天前 0 点。 */
     fun startDaysAgo(days: Int, from: Long = nowMillis()): Long =
         startOfDay(from) - days * 86_400_000L
+
+    /**
+     * 当前日 0 点的 Flow：订阅时立即发射，之后每跨一个本地 0 点重发。
+     * 用于驱动「今日/本周/本月」等相对窗口在跨天后重新查询。
+     * 发射的是触发器，不承载精确值——收到信号后应重新调用 startOfToday() 等函数。
+     * [now] 供测试注入虚拟时钟，生产使用默认真实时钟。
+     */
+    fun observeDayStart(now: () -> Long = ::nowMillis): Flow<Long> = flow {
+        while (true) {
+            val current = now()
+            emit(startOfDay(current))
+            // 到下一个 0 点的时长，加 1 秒余量防止取整误差导致提前/反复触发
+            val next = startOfNextDay(current) + 1_000L
+            delay(next - current)
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.ExpenseRepository
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,9 @@ data class LedgerUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LedgerViewModel(
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
+    /** 跨 0 点重发当前日，驱动「今日/昨日/本周」等相对窗口跨天重算。测试可注入有限流。 */
+    private val dayStartFlow: Flow<Long> = DateUtil.observeDayStart()
 ) : ViewModel() {
 
     private val _timeFilter = MutableStateFlow(TimeFilter.TODAY)
@@ -49,7 +52,7 @@ class LedgerViewModel(
     private val _categoryId = MutableStateFlow<Long?>(null)
 
     val uiState: StateFlow<LedgerUiState> =
-        combine(_timeFilter, _customRange, _categoryId) { filter, custom, catId ->
+        combine(_timeFilter, _customRange, _categoryId, dayStartFlow) { filter, custom, catId, _ ->
             Triple(filter, custom, catId)
         }.flatMapLatest { (filter, custom, catId) ->
             val (start, end) = timeRange(filter, custom)

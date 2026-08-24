@@ -14,11 +14,11 @@ import com.ledgerlite.app.domain.model.BigItemStatus
  */
 object AmortizationUtil {
 
-    /** 资产总使用天数（含首尾）。active 用今天，ended 用 endedAt。 */
+    /** 资产总使用天数（含首尾）。active 用 now 所在日，ended 用 endedAt。 */
     fun totalDays(item: BigItem, now: Long = DateUtil.nowMillis()): Long {
         val start = DateUtil.startOfDay(item.startDate)
         val end = when (item.status) {
-            BigItemStatus.active -> DateUtil.startOfToday()
+            BigItemStatus.active -> DateUtil.startOfDay(now)
             BigItemStatus.ended -> DateUtil.startOfDay(item.endedAt ?: item.startDate)
         }
         val days = (end - start) / 86_400_000L + 1

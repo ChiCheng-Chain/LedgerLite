@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.ledgerlite.app.data.local.entity.BigItem
 import com.ledgerlite.app.data.repository.BigItemRepository
 import com.ledgerlite.app.util.AmortizationUtil
+import com.ledgerlite.app.util.DateUtil
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -20,15 +23,17 @@ data class BigItemListUiState(
 )
 
 class BigItemViewModel(
-    private val bigItemRepository: BigItemRepository
+    private val bigItemRepository: BigItemRepository,
+    /** 跨 0 点重发当前日，驱动摊销天数跨天重算。测试可注入有限流。 */
+    private val dayStartFlow: Flow<Long> = DateUtil.observeDayStart()
 ) : ViewModel() {
 
     val uiState: StateFlow<BigItemListUiState> =
-        bigItemRepository.observeAll().map { items ->
+        combine(bigItemRepository.observeAll(), dayStartFlow) { items, dayStart ->
             BigItemListUiState(
                 items = items,
-                totalDailyCost = AmortizationUtil.totalDailyCost(items),
-                totalWeeklyCost = AmortizationUtil.totalWeeklyCost(items),
+                totalDailyCost = AmortizationUtil.totalDailyCost(items, dayStart),
+                totalWeeklyCost = AmortizationUtil.totalWeeklyCost(items, dayStart),
                 isLoading = false
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, BigItemListUiState())
