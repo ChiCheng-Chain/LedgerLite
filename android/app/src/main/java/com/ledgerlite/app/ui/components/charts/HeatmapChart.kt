@@ -66,14 +66,14 @@ fun HeatmapChart(
 
     // 用 timestamp（本地 0 点 epoch）建索引。
     val dataMap = remember(cells) { cells.associate { it.timestamp to it } }
-    val cal = remember { Calendar.getInstance() }
 
-    // 窗口：从今天往回铺 days 天。
-    val todayStart = remember {
-        cal.timeInMillis = System.currentTimeMillis()
-        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
-        cal.timeInMillis
+    // 窗口：从今天往回铺 days 天。todayStart 不缓存——上层跨 0 点重发数据时
+    // 这里必须跟着移动，否则跨天后格子整体偏移一天。
+    val todayStart = remember(cells) {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
     }
     val windowStart = todayStart - (days - 1) * 86_400_000L
 

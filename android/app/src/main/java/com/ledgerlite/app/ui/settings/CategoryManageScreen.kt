@@ -134,8 +134,7 @@ fun CategoryManageScreen(onBack: () -> Unit) {
                                 blockedCount = count
                                 pendingDelete = category
                             }
-                        }
-                    )
+                        }                    )
                 }
             }
         }
@@ -189,8 +188,11 @@ fun CategoryManageScreen(onBack: () -> Unit) {
                 } else {
                     TextButton(onClick = {
                         scope.launch {
-                            container.categoryRepository.delete(cat.id)
-                            pendingDelete = null
+                            val deleted = container.categoryRepository.delete(
+                                cat.id,
+                                referenceCount = { container.expenseRepository.referenceCount(it) }
+                            )
+                            if (deleted) pendingDelete = null
                         }
                     }) { Text("删除", color = MaterialTheme.colorScheme.error) }
                 }

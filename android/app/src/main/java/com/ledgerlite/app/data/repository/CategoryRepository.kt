@@ -40,7 +40,10 @@ class CategoryRepository(private val dao: CategoryDao) {
         if (updates.isNotEmpty()) dao.updateAll(updates)
     }
 
-    suspend fun delete(id: Long) {
+    /** 删除分类。仍被未删除流水引用时拒绝，返回 false；UI 层据此提示。 */
+    suspend fun delete(id: Long, referenceCount: suspend (Long) -> Int): Boolean {
+        if (referenceCount(id) > 0) return false
         dao.delete(id)
+        return true
     }
 }
