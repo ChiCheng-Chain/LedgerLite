@@ -88,7 +88,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 
             // 货币符号：预置常用符号一键选择，另支持自定义
             Text("货币符号", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val presetSymbols = listOf("¥", "$", "€", "£", "₩", "JP¥")
+            val presetSymbols = listOf("¥", "$", "€", "£")
             val isPreset = currencySymbol in presetSymbols
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
