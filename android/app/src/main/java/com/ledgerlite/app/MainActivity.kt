@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ledgerlite.app.ui.components.DecimalConfig
+import com.ledgerlite.app.ui.components.LocalCurrencySymbol
 import com.ledgerlite.app.ui.components.LocalDecimalConfig
 import com.ledgerlite.app.ui.navigation.AppRoot
 import com.ledgerlite.app.ui.theme.LedgerLiteTheme
@@ -20,8 +21,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val showDecimals by settings.showDecimals.collectAsStateWithLifecycle(initialValue = true)
             val decimalPlaces by settings.decimalPlaces.collectAsStateWithLifecycle(initialValue = 2)
+            val currencySymbol by settings.currencySymbol.collectAsStateWithLifecycle(initialValue = "¥")
             LedgerLiteTheme {
-                CompositionLocalProvider(LocalDecimalConfig provides DecimalConfig(showDecimals, decimalPlaces)) {
+                CompositionLocalProvider(
+                    LocalDecimalConfig provides DecimalConfig(showDecimals, decimalPlaces),
+                    LocalCurrencySymbol provides currencySymbol
+                ) {
                     AppRoot()
                 }
             }

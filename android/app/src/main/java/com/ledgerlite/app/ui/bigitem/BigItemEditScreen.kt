@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ledgerlite.app.LedgerLiteApp
 import com.ledgerlite.app.data.local.entity.BigItem
+import com.ledgerlite.app.ui.components.LocalCurrencySymbol
 import com.ledgerlite.app.util.AmortizationUtil
 import com.ledgerlite.app.util.DateUtil
 import com.ledgerlite.app.util.MoneyUtil
@@ -107,7 +108,8 @@ fun BigItemEditScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             // 总金额：点击弹计算器面板（不用系统输入法）。用 Box 包裹避免 OutlinedTextField 消费点击。
-            val amountDisplay = if (amountYuan.isEmpty()) "点击输入金额" else "¥$amountYuan"
+            val currency = LocalCurrencySymbol.current
+            val amountDisplay = if (amountYuan.isEmpty()) "点击输入金额" else "$currency$amountYuan"
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,7 +165,7 @@ fun BigItemEditScreen(
                     createdAt = 0, updatedAt = 0
                 )
                 Text(
-                    "已使用 ${AmortizationUtil.totalDays(preview)} 天 · 日均 ¥${MoneyUtil.centsToYuan(AmortizationUtil.dailyCost(preview))} · 周均 ¥${MoneyUtil.centsToYuan(AmortizationUtil.weeklyCost(preview))}",
+                    "已使用 ${AmortizationUtil.totalDays(preview)} 天 · 日均 ${LocalCurrencySymbol.current}${MoneyUtil.centsToYuan(AmortizationUtil.dailyCost(preview))} · 周均 ${LocalCurrencySymbol.current}${MoneyUtil.centsToYuan(AmortizationUtil.weeklyCost(preview))}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.tertiary,
                     fontWeight = FontWeight.Medium

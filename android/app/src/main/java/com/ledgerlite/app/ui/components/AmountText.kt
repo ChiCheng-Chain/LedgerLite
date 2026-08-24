@@ -25,7 +25,7 @@ fun AmountText(
     color: Color = MaterialTheme.colorScheme.error,
     fontSize: TextUnit = 18.sp,
     fontWeight: FontWeight = FontWeight.SemiBold,
-    currencySymbol: String = "¥",
+    currencySymbol: String = LocalCurrencySymbol.current,
     showSign: Boolean = false,
     showDecimals: Boolean? = null,
     withGrouping: Boolean = true,

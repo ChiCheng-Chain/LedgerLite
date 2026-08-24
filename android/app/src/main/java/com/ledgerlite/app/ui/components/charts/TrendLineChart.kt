@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ledgerlite.app.ui.components.LocalCurrencySymbol
 import com.ledgerlite.app.ui.components.LocalDecimalConfig
 import com.ledgerlite.app.ui.theme.AmountNumberStyle
 import com.ledgerlite.app.util.MoneyUtil
@@ -171,7 +172,7 @@ fun TrendLineChart(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${p.label}  ¥${MoneyUtil.centsToYuan(p.value, decimalPlaces = LocalDecimalConfig.current.run { if (show) places else 0 })}",
+                    text = "${p.label}  ${LocalCurrencySymbol.current}${MoneyUtil.centsToYuan(p.value, decimalPlaces = LocalDecimalConfig.current.run { if (show) places else 0 })}",
                     style = AmountNumberStyle.copy(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 13.sp,

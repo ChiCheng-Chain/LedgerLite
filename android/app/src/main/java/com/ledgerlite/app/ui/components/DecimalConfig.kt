@@ -10,3 +10,6 @@ data class DecimalConfig(val show: Boolean, val places: Int) {
 }
 
 val LocalDecimalConfig = staticCompositionLocalOf { DecimalConfig.Default }
+
+/** 全局货币符号，由 MainActivity 从 SettingsRepository 注入，金额展示组件统一读取。 */
+val LocalCurrencySymbol = staticCompositionLocalOf { "¥" }

@@ -124,7 +124,7 @@ fun AmountDisplay(
         verticalAlignment = Alignment.Bottom
     ) {
         Text(
-            text = "¥",
+            text = LocalCurrencySymbol.current,
             style = AmountNumberStyle.copy(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = (fontSize.value * 0.6f).sp

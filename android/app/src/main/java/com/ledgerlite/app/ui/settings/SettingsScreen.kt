@@ -51,6 +51,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenCategoryManage: () -> Unit) {
     val recentLimit by settings.recentLimit.collectAsStateWithLifecycle(initialValue = 5)
 
     var currencyInput by remember(currencySymbol) { mutableStateOf(currencySymbol) }
+    var showCustomCurrency by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -85,21 +86,60 @@ fun SettingsScreen(onBack: () -> Unit, onOpenCategoryManage: () -> Unit) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
             Spacer(Modifier.height(8.dp))
 
-            // 货币符号
-            OutlinedTextField(
-                value = currencyInput,
-                onValueChange = { currencyInput = it.take(3) },
-                label = { Text("货币符号") },
-                singleLine = true,
+            // 货币符号：预置常用符号一键选择，另支持自定义
+            Text("货币符号", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val presetSymbols = listOf("¥", "$", "€", "£", "₩", "JP¥")
+            val isPreset = currencySymbol in presetSymbols
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    if (currencyInput != currencySymbol) {
-                        androidx.compose.material3.TextButton(onClick = {
-                            scope.launch { settings.setCurrencySymbol(currencyInput.ifEmpty { "¥" }) }
-                        }) { Text("保存") }
-                    }
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                presetSymbols.forEach { symbol ->
+                    FilterChip(
+                        selected = currencySymbol == symbol,
+                        onClick = { scope.launch { settings.setCurrencySymbol(symbol) } },
+                        label = { Text(symbol) }
+                    )
                 }
-            )
+                FilterChip(
+                    selected = !isPreset,
+                    onClick = {
+                        if (isPreset) {
+                            currencyInput = ""
+                            showCustomCurrency = true
+                        } else {
+                            showCustomCurrency = !showCustomCurrency
+                        }
+                    },
+                    label = { Text("自定义") }
+                )
+            }
+            if (!isPreset || showCustomCurrency) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = currencyInput,
+                        onValueChange = { currencyInput = it.take(3) },
+                        label = { Text("自定义符号（1-3 字符）") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            val value = currencyInput.trim()
+                            if (value.isNotEmpty()) {
+                                scope.launch { settings.setCurrencySymbol(value) }
+                                showCustomCurrency = false
+                            }
+                        },
+                        enabled = currencyInput.trim().isNotEmpty()
+                    ) { Text("保存") }
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
