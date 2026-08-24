@@ -9,6 +9,7 @@ import com.ledgerlite.app.data.local.relation.DaySum
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
+import com.ledgerlite.app.data.repository.SettingsRepository
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +26,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import androidx.datastore.preferences.core.emptyPreferences
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -50,6 +52,10 @@ class RecordViewModelTest {
         vm = RecordViewModel(
             ExpenseRepository(fakeExpenseDao),
             CategoryRepository(fakeCategoryDao),
+            SettingsRepository(
+                preferences = flowOf(emptyPreferences()),
+                editor = { }
+            ),
             // 注入有限流，避免默认 observeDayStart 的无限 delay 卡死 advanceUntilIdle
             dayStartFlow = flowOf(DateUtil.startOfToday())
         )

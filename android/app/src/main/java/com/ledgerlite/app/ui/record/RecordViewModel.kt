@@ -8,6 +8,7 @@ import com.ledgerlite.app.data.local.entity.ExpenseRecord
 import com.ledgerlite.app.data.local.relation.ExpenseWithCategory
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
+import com.ledgerlite.app.data.repository.SettingsRepository
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +30,8 @@ data class RecordUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordViewModel(
     private val expenseRepository: ExpenseRepository,
-    private val categoryRepository: CategoryRepository,
+    categoryRepository: CategoryRepository,
+    settingsRepository: SettingsRepository,
     /** 跨 0 点重发当前日，驱动「今日/本月」窗口跨天重算。测试可注入有限流。 */
     private val dayStartFlow: Flow<Long> = DateUtil.observeDayStart()
 ) : ViewModel() {
@@ -37,19 +39,24 @@ class RecordViewModel(
     val uiState: StateFlow<RecordUiState> =
         dayStartFlow.flatMapLatest {
             combine(
-                expenseRepository.observeTodayTotal(),
-                expenseRepository.observeMonthTotal(),
-                expenseRepository.observeRecent(5),
+                settingsRepository.recentLimit,
                 categoryRepository.observeAll()
-            ) { today, month, recent, categories ->
-                RecordUiState(
-                    todayTotal = today,
-                    monthTotal = month,
-                    recentExpenses = recent,
-                    categories = categories,
-                    isLoading = false
-                )
-            }
+            ) { limit, categories -> limit to categories }
+                .flatMapLatest { (limit, categories) ->
+                    combine(
+                        expenseRepository.observeTodayTotal(),
+                        expenseRepository.observeMonthTotal(),
+                        expenseRepository.observeRecent(limit)
+                    ) { today, month, recent ->
+                        RecordUiState(
+                            todayTotal = today,
+                            monthTotal = month,
+                            recentExpenses = recent,
+                            categories = categories,
+                            isLoading = false
+                        )
+                    }
+                }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, RecordUiState())
 
     fun createExpense(amount: Long, categoryId: Long, note: String, occurredAt: Long) {
@@ -72,10 +79,11 @@ class RecordViewModel(
 
     class Factory(
         private val expenseRepository: ExpenseRepository,
-        private val categoryRepository: CategoryRepository
+        private val categoryRepository: CategoryRepository,
+        private val settingsRepository: SettingsRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            RecordViewModel(expenseRepository, categoryRepository) as T
+            RecordViewModel(expenseRepository, categoryRepository, settingsRepository) as T
     }
 }

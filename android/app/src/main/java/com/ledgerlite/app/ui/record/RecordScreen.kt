@@ -62,7 +62,9 @@ import java.util.Locale
 fun RecordScreen(bottomInset: Dp = 0.dp) {
     val container = (LocalContext.current.applicationContext as LedgerLiteApp).container
     val vm: RecordViewModel = viewModel(
-        factory = RecordViewModel.Factory(container.expenseRepository, container.categoryRepository)
+        factory = RecordViewModel.Factory(
+            container.expenseRepository, container.categoryRepository, container.settingsRepository
+        )
     )
     val state by vm.uiState.collectAsStateWithLifecycle()
     var showEntrySheet by remember { mutableStateOf(false) }
