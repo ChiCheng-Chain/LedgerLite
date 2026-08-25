@@ -26,10 +26,10 @@ v0.1.1 实机走查，按页面分组，完整索引见 [docs/screenshots.md](do
 
 | | | | |
 |:---:|:---:|:---:|:---:|
-| ![记账](docs/screenshots/record-home.png) | ![流水](docs/screenshots/ledger-list-with-trash.png) | ![资产](docs/screenshots/bigitem-list.png) | ![快速记账](docs/screenshots/record-quick-entry.png) |
-| 记账 | 流水 | 资产 | 快速记账 |
-| ![分类占比](docs/screenshots/stats-category-pie.png) | ![趋势热力图](docs/screenshots/stats-trend-heatmap.png) | ![设置首选项](docs/screenshots/settings-top.png) | ![设置备份](docs/screenshots/settings-bottom.png) |
-| 统计 - 分类占比 | 统计 - 趋势/热力图 | 设置 | 设置 - 备份与关于 |
+| ![设置首选项](docs/screenshots/settings-top.png) | ![资产](docs/screenshots/bigitem-list.png) | ![快速记账](docs/screenshots/record-quick-entry.png) | ![流水](docs/screenshots/ledger-list-with-trash.png) |
+| 设置 | 资产 | 快速记账 | 流水 |
+| ![记账](docs/screenshots/record-home.png) | ![分类占比](docs/screenshots/stats-category-pie.png) | ![趋势热力图](docs/screenshots/stats-trend-heatmap.png) | ![设置备份](docs/screenshots/settings-bottom.png) |
+| 记账 | 统计 - 分类占比 | 统计 - 趋势/热力图 | 设置 - 备份与关于 |
 
 ## 构建
 
