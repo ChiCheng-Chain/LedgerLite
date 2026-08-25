@@ -32,4 +32,14 @@ interface BigItemDao {
 
     @Query("UPDATE big_items SET status = :status, endedAt = :endedAt, updatedAt = :now WHERE id = :id")
     suspend fun endItem(id: Long, status: BigItemStatus, endedAt: Long, now: Long)
+
+    // 备份恢复
+    @Query("SELECT * FROM big_items ORDER BY id ASC")
+    suspend fun getAll(): List<BigItem>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(items: List<BigItem>)
+
+    @Query("DELETE FROM big_items")
+    suspend fun deleteAll()
 }

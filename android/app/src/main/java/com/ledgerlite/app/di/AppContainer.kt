@@ -2,6 +2,7 @@ package com.ledgerlite.app.di
 
 import android.content.Context
 import com.ledgerlite.app.data.local.LedgerDatabase
+import com.ledgerlite.app.data.repository.BackupRepository
 import com.ledgerlite.app.data.repository.BigItemRepository
 import com.ledgerlite.app.data.repository.CategoryRepository
 import com.ledgerlite.app.data.repository.ExpenseRepository
@@ -24,4 +25,5 @@ class AppContainer(context: Context) {
         StatisticsRepository(expenseRepository, bigItemRepository)
     }
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(appContext) }
+    val backupRepository: BackupRepository by lazy { BackupRepository(database, settingsRepository) }
 }

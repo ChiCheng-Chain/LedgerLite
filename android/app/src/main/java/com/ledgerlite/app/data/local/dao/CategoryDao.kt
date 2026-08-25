@@ -37,4 +37,14 @@ interface CategoryDao {
 
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun delete(id: Long)
+
+    // 备份恢复
+    @Query("SELECT * FROM categories ORDER BY id ASC")
+    suspend fun getAll(): List<Category>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(categories: List<Category>)
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAll()
 }

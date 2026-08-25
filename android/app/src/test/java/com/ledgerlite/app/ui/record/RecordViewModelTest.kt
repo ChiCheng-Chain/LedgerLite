@@ -149,6 +149,17 @@ private class FakeExpenseDao : ExpenseDao {
         return before - records.value.size
     }
 
+    // 备份恢复方法：本测试不涉及，占位实现
+    override suspend fun getAll(): List<ExpenseRecord> = records.value
+
+    override suspend fun insertAll(records: List<ExpenseRecord>) {
+        this.records.value = this.records.value + records
+    }
+
+    override suspend fun deleteAll() {
+        records.value = emptyList()
+    }
+
     private fun ExpenseRecord.toWithCategory() = ExpenseWithCategory(this, "测试", 0xFF3C6E71, "")
 }
 
@@ -163,4 +174,9 @@ private class FakeCategoryDao(initial: List<Category>) : CategoryDao {
     override suspend fun update(category: Category) { TODO("Not yet implemented") }
     override suspend fun updateAll(categories: List<Category>) { TODO("Not yet implemented") }
     override suspend fun delete(id: Long) { TODO("Not yet implemented") }
+
+    // 备份恢复方法：本测试不涉及，占位实现
+    override suspend fun getAll(): List<Category> = categories.value
+    override suspend fun insertAll(categories: List<Category>) { TODO("Not yet implemented") }
+    override suspend fun deleteAll() { TODO("Not yet implemented") }
 }

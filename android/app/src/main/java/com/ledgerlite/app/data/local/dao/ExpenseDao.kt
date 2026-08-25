@@ -136,4 +136,14 @@ interface ExpenseDao {
     // 引用计数：删分类前判断是否被引用
     @Query("SELECT COUNT(*) FROM expense_records WHERE categoryId = :categoryId AND deletedAt IS NULL")
     suspend fun referenceCount(categoryId: Long): Int
+
+    // 备份恢复
+    @Query("SELECT * FROM expense_records ORDER BY id ASC")
+    suspend fun getAll(): List<ExpenseRecord>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(records: List<ExpenseRecord>)
+
+    @Query("DELETE FROM expense_records")
+    suspend fun deleteAll()
 }
