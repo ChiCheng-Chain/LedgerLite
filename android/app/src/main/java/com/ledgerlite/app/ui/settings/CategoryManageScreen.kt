@@ -51,6 +51,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ledgerlite.app.LedgerLiteApp
@@ -64,7 +65,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryManageScreen(onBack: () -> Unit) {
+fun CategoryManageScreen(onBack: () -> Unit, bottomInset: Dp = 0.dp) {
     val container = (LocalContext.current.applicationContext as LedgerLiteApp).container
     val categories by container.categoryRepository.observeAll().collectAsStateWithLifecycle(initialValue = emptyList())
     val scope = rememberCoroutineScope()
@@ -92,11 +93,13 @@ fun CategoryManageScreen(onBack: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { creating = true },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Outlined.Add, contentDescription = "新增分类", tint = MaterialTheme.colorScheme.onPrimary)
+            Box(modifier = Modifier.padding(bottom = bottomInset)) {
+                FloatingActionButton(
+                    onClick = { creating = true },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = "新增分类", tint = MaterialTheme.colorScheme.onPrimary)
+                }
             }
         }
     ) { padding ->
@@ -122,7 +125,7 @@ fun CategoryManageScreen(onBack: () -> Unit) {
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp + bottomInset),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(ordered, key = { _, c -> c.id }) { index, category ->

@@ -84,7 +84,10 @@ fun RecordScreen(bottomInset: Dp = 0.dp) {
     )
 
     if (showCategoryManage) {
-        CategoryManageScreen(onBack = { showCategoryManage = false })
+        CategoryManageScreen(
+            onBack = { showCategoryManage = false },
+            bottomInset = bottomInset
+        )
     }
 
     if (showEntrySheet) {
