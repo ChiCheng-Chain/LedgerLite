@@ -5,7 +5,7 @@ v0.1.1 实机走查截图，对应设置页→关于对话框显示的当前版�
 ## 记账
 
 - ![记账首页](screenshots/record-home.png) — **record-home.png**：今日/本月支出、常用分类、记一笔入口、最近记录
-- ![快速记账](screenshots/record-quick-entry.png) — **record-quick-entry.png**：点击「记一笔」或常用分类弹出的金额+键盘+分类选择面板
+- ![快速记账](screenshots/record-quick-entry.png) — **record-quick-entry.png**：点击「记一笔」或常用分类弹出的金额键盘+分类选择面板
 
 ## 流水
 
@@ -23,6 +23,6 @@ v0.1.1 实机走查截图，对应设置页→关于对话框显示的当前版�
 ## 设置
 
 - ![设置首选项](screenshots/settings-top.png) — **settings-top.png**：默认首页、货币符号、小数显示、最近记录数量
-- ![设置备份与关于](screenshots/settings-bottom.png) — **settings-bottom.png**：备份与恢复（新增）+ 作者 footer
+- ![设置-关于](screenshots/settings-bottom.png) — **settings-bottom.png**：备份与恢复（新增）+ 作者 footer
 
 > 这些图与 [v0.1.1 Release](https://github.com/ChiCheng-Chain/LedgerLite/releases/tag/v0.1.1) 中的资产是同一批；如需看高分辨率可到 Release 页下载原图。
