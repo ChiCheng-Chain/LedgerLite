@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ledgerlite.app.data.local.entity.BigItem
 import com.ledgerlite.app.data.repository.BigItemRepository
+import com.ledgerlite.app.domain.model.BigItemStatus
 import com.ledgerlite.app.util.AmortizationUtil
 import com.ledgerlite.app.util.DateUtil
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +32,11 @@ class BigItemViewModel(
     val uiState: StateFlow<BigItemListUiState> =
         combine(bigItemRepository.observeAll(), dayStartFlow) { items, dayStart ->
             BigItemListUiState(
-                items = items,
+                // 使用中的按创建时间倒序在前，已结束的垫底（按结束时间倒序）
+                items = items.sortedWith(
+                    compareBy<BigItem> { it.status == BigItemStatus.ended }
+                        .thenByDescending { if (it.status == BigItemStatus.ended) it.endedAt ?: it.updatedAt else it.createdAt }
+                ),
                 totalDailyCost = AmortizationUtil.totalDailyCost(items, dayStart),
                 totalWeeklyCost = AmortizationUtil.totalWeeklyCost(items, dayStart),
                 isLoading = false
