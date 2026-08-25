@@ -18,13 +18,16 @@ private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore
 /**
  * 本地偏好设置。封装 DataStore，每项一个 Flow + suspend setter。
  * DataStore 必须进程级唯一（由 Context.appDataStore 扩展属性保证），不能在 Composable 里反复构造。
+ *
+ * setter 直接在 edit 提供的 MutablePreferences 上赋值——
+ * 不要套 toMutablePreferences().toPreferences()，那会切断 DataStore 的修改检测导致写入丢失。
  */
 class SettingsRepository(
     context: Context? = null,
     /** 偏好数据源。默认 DataStore，测试可注入内存流。 */
     private val preferences: Flow<Preferences> =
         requireNotNull(context).applicationContext.appDataStore.data,
-    private val editor: suspend (suspend (Preferences) -> Preferences) -> Unit = { mutate ->
+    private val editor: suspend (suspend (MutablePreferences) -> Unit) -> Unit = { mutate ->
         requireNotNull(context).applicationContext.appDataStore.edit { prefs -> mutate(prefs) }
     }
 ) {
@@ -44,26 +47,26 @@ class SettingsRepository(
     val recentLimit: Flow<Int> = preferences.map { it[Keys.RECENT_LIMIT] ?: 5 }
 
     suspend fun setDefaultHome(value: String) {
-        edit { prefs -> prefs.toMutablePreferences().apply { set(Keys.DEFAULT_HOME, value) }.toPreferences() }
+        edit { prefs -> prefs[Keys.DEFAULT_HOME] = value }
     }
 
     suspend fun setCurrencySymbol(value: String) {
-        edit { prefs -> prefs.toMutablePreferences().apply { set(Keys.CURRENCY_SYMBOL, value) }.toPreferences() }
+        edit { prefs -> prefs[Keys.CURRENCY_SYMBOL] = value }
     }
 
     suspend fun setShowDecimals(value: Boolean) {
-        edit { prefs -> prefs.toMutablePreferences().apply { set(Keys.SHOW_DECIMALS, value) }.toPreferences() }
+        edit { prefs -> prefs[Keys.SHOW_DECIMALS] = value }
     }
 
     suspend fun setDecimalPlaces(value: Int) {
-        edit { prefs -> prefs.toMutablePreferences().apply { set(Keys.DECIMAL_PLACES, value.coerceIn(1, 2)) }.toPreferences() }
+        edit { prefs -> prefs[Keys.DECIMAL_PLACES] = value.coerceIn(1, 2) }
     }
 
     suspend fun setRecentLimit(value: Int) {
-        edit { prefs -> prefs.toMutablePreferences().apply { set(Keys.RECENT_LIMIT, value.coerceIn(1, 20)) }.toPreferences() }
+        edit { prefs -> prefs[Keys.RECENT_LIMIT] = value.coerceIn(1, 20) }
     }
 
-    private suspend fun edit(mutate: (Preferences) -> Preferences) {
+    private suspend fun edit(mutate: suspend (MutablePreferences) -> Unit) {
         editor(mutate)
     }
 }
