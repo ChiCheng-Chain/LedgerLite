@@ -449,7 +449,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
             Column {
                 Text("作者：ChiCheng", style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("版本：v0.1.0 (build 1)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("版本：v0.1.1 (build 2)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("协议：MIT License", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("年份：2026", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
