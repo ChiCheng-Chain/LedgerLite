@@ -301,7 +301,21 @@ private fun FilterBar(
                     )
                 )
             }
-            item {
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // 分类筛选行：回收站入口放在全部分类对侧
+        Box {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AssistChip(
+                    onClick = onCategoryMenuToggle,
+                    label = { Text(state.selectedCategoryId?.let { id -> categories.find { it.id == id }?.name ?: "分类" } ?: "全部分类") }
+                )
                 AssistChip(
                     onClick = onOpenTrash,
                     label = { Text("回收站") },
@@ -315,18 +329,6 @@ private fun FilterBar(
                     colors = AssistChipDefaults.assistChipColors(
                         containerColor = if (state.isTrashMode) MaterialTheme.colorScheme.error.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
                     )
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // 分类筛选行
-        Box {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AssistChip(
-                    onClick = onCategoryMenuToggle,
-                    label = { Text(state.selectedCategoryId?.let { id -> categories.find { it.id == id }?.name ?: "分类" } ?: "全部分类") }
                 )
             }
             DropdownMenu(
