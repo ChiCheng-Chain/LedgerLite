@@ -130,6 +130,25 @@ private class FakeExpenseDao : ExpenseDao {
     override suspend fun referenceCount(categoryId: Long): Int =
         records.value.count { it.categoryId == categoryId && it.deletedAt == null }
 
+    // 回收站方法：本测试不涉及，占位实现
+    override fun observeDeleted(): Flow<List<ExpenseWithCategory>> = records.map { list ->
+        list.filter { it.deletedAt != null }.map { it.toWithCategory() }
+    }
+
+    override suspend fun restore(id: Long, now: Long) {
+        records.value = records.value.map { if (it.id == id) it.copy(deletedAt = null, updatedAt = now) else it }
+    }
+
+    override suspend fun hardDelete(id: Long) {
+        records.value = records.value.filterNot { it.id == id && it.deletedAt != null }
+    }
+
+    override suspend fun purgeOlderThan(threshold: Long): Int {
+        val before = records.value.size
+        records.value = records.value.filterNot { (it.deletedAt ?: Long.MAX_VALUE) < threshold }
+        return before - records.value.size
+    }
+
     private fun ExpenseRecord.toWithCategory() = ExpenseWithCategory(this, "测试", 0xFF3C6E71, "")
 }
 

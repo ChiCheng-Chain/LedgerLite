@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -34,6 +37,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SwipeToDismissBox
@@ -75,24 +79,35 @@ fun LedgerScreen() {
     var pendingDelete by remember { mutableStateOf<ExpenseWithCategory?>(null) }
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showCustomRange by remember { mutableStateOf(false) }
+    var showEmptyTrashConfirm by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部筛选条
         FilterBar(
             state = state,
             categories = categories,
-            onTimeFilter = { vm.setTimeFilter(it) },
+            onTimeFilter = { vm.setTimeFilter(it); vm.closeTrash() },
             onCustomRange = { showCustomRange = true },
             onCategoryMenuToggle = { showCategoryMenu = true },
             showCategoryMenu = showCategoryMenu,
-            onCategorySelect = { id -> vm.setCategoryFilter(id); showCategoryMenu = false }
+            onCategorySelect = { id -> vm.setCategoryFilter(id); showCategoryMenu = false },
+            onOpenTrash = { vm.openTrash() }
         )
 
-        LedgerContent(
-            state = state,
-            onItemClick = { item -> editing = item.expense },
-            onSwipeDelete = { item -> pendingDelete = item }
-        )
+        if (state.isTrashMode) {
+            TrashContent(
+                items = state.trashItems,
+                onRestore = { vm.restore(it.expense.id) },
+                onHardDelete = { vm.hardDelete(it.expense.id) },
+                onEmpty = { showEmptyTrashConfirm = true }
+            )
+        } else {
+            LedgerContent(
+                state = state,
+                onItemClick = { item -> editing = item.expense },
+                onSwipeDelete = { item -> pendingDelete = item }
+            )
+        }
     }
 
     // 自定义日期范围选择
@@ -124,8 +139,7 @@ fun LedgerScreen() {
 
     // 删除二次确认（Material You 卡片风格）
     pendingDelete?.let { item ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { pendingDelete = null }) {
-            Card(
+        androidx.compose.ui.window.Dialog(onDismissRequest = { pendingDelete = null }) {            Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -158,7 +172,7 @@ fun LedgerScreen() {
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "删除后可在回收站恢复（后续版本）",
+                        "删除后可在「回收站」恢复，30 天后自动清理",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -183,6 +197,53 @@ fun LedgerScreen() {
             }
         }
     }
+
+    // 清空回收站确认
+    if (showEmptyTrashConfirm) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showEmptyTrashConfirm = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "清空回收站？",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "共 ${state.trashItems.size} 条记录将被彻底删除，此操作不可撤销。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        TextButton(
+                            onClick = { showEmptyTrashConfirm = false },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("取消", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        Button(
+                            onClick = {
+                                vm.emptyTrash()
+                                showEmptyTrashConfirm = false
+                            },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) { Text("清空", color = MaterialTheme.colorScheme.onError) }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -193,7 +254,8 @@ private fun FilterBar(
     onCustomRange: () -> Unit,
     onCategoryMenuToggle: () -> Unit,
     showCategoryMenu: Boolean,
-    onCategorySelect: (Long?) -> Unit
+    onCategorySelect: (Long?) -> Unit,
+    onOpenTrash: () -> Unit
 ) {
     val dateFmt = remember { SimpleDateFormat("MM-dd", Locale.getDefault()) }
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -204,21 +266,21 @@ private fun FilterBar(
         ) {
             item {
                 FilterChip(
-                    selected = state.timeFilter == TimeFilter.TODAY,
+                    selected = state.timeFilter == TimeFilter.TODAY && !state.isTrashMode,
                     onClick = { onTimeFilter(TimeFilter.TODAY) },
                     label = { Text("今天") }
                 )
             }
             item {
                 FilterChip(
-                    selected = state.timeFilter == TimeFilter.WEEK,
+                    selected = state.timeFilter == TimeFilter.WEEK && !state.isTrashMode,
                     onClick = { onTimeFilter(TimeFilter.WEEK) },
                     label = { Text("本周") }
                 )
             }
             item {
                 FilterChip(
-                    selected = state.timeFilter == TimeFilter.MONTH,
+                    selected = state.timeFilter == TimeFilter.MONTH && !state.isTrashMode,
                     onClick = { onTimeFilter(TimeFilter.MONTH) },
                     label = { Text("本月") }
                 )
@@ -235,7 +297,23 @@ private fun FilterBar(
                     },
                     leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.padding(start = 4.dp)) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (state.timeFilter == TimeFilter.CUSTOM) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = if (state.timeFilter == TimeFilter.CUSTOM && !state.isTrashMode) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
+            }
+            item {
+                AssistChip(
+                    onClick = onOpenTrash,
+                    label = { Text("回收站") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.DeleteOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (state.isTrashMode) MaterialTheme.colorScheme.error.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }
@@ -346,6 +424,129 @@ private fun LedgerContent(
             }
         }
         item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+/** 回收站列表：软删记录 + 剩余天数，单条恢复/彻底删 + 顶部清空入口。 */
+@Composable
+private fun TrashContent(
+    items: List<ExpenseWithCategory>,
+    onRestore: (ExpenseWithCategory) -> Unit,
+    onHardDelete: (ExpenseWithCategory) -> Unit,
+    onEmpty: () -> Unit
+) {
+    if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("回收站是空的", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+
+    val now = remember { System.currentTimeMillis() }
+    val dayMs = 24 * 60 * 60 * 1000L
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(key = "trash-header") {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "删除的记录保留 30 天，到期自动清理",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "清空",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.clickable(onClick = onEmpty)
+                )
+            }
+        }
+        items(items, key = { it.expense.id }) { item ->
+            TrashRow(
+                item = item,
+                daysLeft = 30 - ((now - (item.expense.deletedAt ?: now)) / dayMs).toInt().coerceAtLeast(0),
+                onRestore = { onRestore(item) },
+                onHardDelete = { onHardDelete(item) }
+            )
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+@Composable
+private fun TrashRow(
+    item: ExpenseWithCategory,
+    daysLeft: Int,
+    onRestore: () -> Unit,
+    onHardDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val accent = item.categoryColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+            val iconVector = item.categoryIcon?.let { CategoryIcon.vector(it) }
+            Box(
+                modifier = Modifier.size(24.dp).background(accent.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(14.dp)
+                    )
+                } else {
+                    Box(modifier = Modifier.size(10.dp).background(accent, CircleShape))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    item.categoryName ?: "未分类",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
+                val sub = buildString {
+                    append("${daysLeft} 天后自动清理")
+                    if (item.expense.note.isNotEmpty()) append("  ${item.expense.note}")
+                }
+                Text(
+                    sub,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onRestore) {
+                Icon(
+                    Icons.Outlined.Restore,
+                    contentDescription = "恢复",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onHardDelete) {
+                Icon(
+                    Icons.Default.DeleteForever,
+                    contentDescription = "彻底删除",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 

@@ -37,7 +37,10 @@ data class LedgerUiState(
     val totalAmount: Long = 0,
     val rangeLabel: String = "",
     val multiDayGroups: Boolean = false,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    /** 回收站模式：列表展示软删记录而非当前筛选结果。 */
+    val isTrashMode: Boolean = false,
+    val trashItems: List<ExpenseWithCategory> = emptyList()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -50,29 +53,52 @@ class LedgerViewModel(
     private val _timeFilter = MutableStateFlow(TimeFilter.TODAY)
     private val _customRange = MutableStateFlow(0L to 0L)
     private val _categoryId = MutableStateFlow<Long?>(null)
+    private val _trashMode = MutableStateFlow(false)
 
     val uiState: StateFlow<LedgerUiState> =
-        combine(_timeFilter, _customRange, _categoryId, dayStartFlow) { filter, custom, catId, _ ->
-            Triple(filter, custom, catId)
-        }.flatMapLatest { (filter, custom, catId) ->
-            val (start, end) = timeRange(filter, custom)
-            val flow = if (catId != null) {
-                expenseRepository.observeByDateRangeWithCategory(start, end, catId)
+        combine(_timeFilter, _customRange, _categoryId, _trashMode, dayStartFlow) { filter, custom, catId, trashMode, _ ->
+            Triple(filter, custom, catId) to trashMode
+        }.flatMapLatest { (params, trashMode) ->
+            val (filter, custom, catId) = params
+            if (trashMode) {
+                // 回收站模式：订阅软删记录流
+                expenseRepository.observeDeleted().map { trash ->
+                    LedgerUiState(
+                        groups = emptyList(),
+                        timeFilter = filter,
+                        customStart = custom.first,
+                        customEnd = custom.second,
+                        selectedCategoryId = catId,
+                        totalAmount = trash.sumOf { it.expense.amount },
+                        rangeLabel = "回收站（${trash.size} 条）",
+                        multiDayGroups = false,
+                        isLoading = false,
+                        isTrashMode = true,
+                        trashItems = trash
+                    )
+                }
             } else {
-                expenseRepository.observeByDateRange(start, end)
-            }
-            flow.map { items ->
-                LedgerUiState(
-                    groups = groupByRange(items, filter, custom),
-                    timeFilter = filter,
-                    customStart = custom.first,
-                    customEnd = custom.second,
-                    selectedCategoryId = catId,
-                    totalAmount = items.sumOf { it.expense.amount },
-                    rangeLabel = rangeLabel(filter),
-                    multiDayGroups = false,
-                    isLoading = false
-                )
+                val (start, end) = timeRange(filter, custom)
+                val flow = if (catId != null) {
+                    expenseRepository.observeByDateRangeWithCategory(start, end, catId)
+                } else {
+                    expenseRepository.observeByDateRange(start, end)
+                }
+                flow.map { items ->
+                    LedgerUiState(
+                        groups = groupByRange(items, filter, custom),
+                        timeFilter = filter,
+                        customStart = custom.first,
+                        customEnd = custom.second,
+                        selectedCategoryId = catId,
+                        totalAmount = items.sumOf { it.expense.amount },
+                        rangeLabel = rangeLabel(filter),
+                        multiDayGroups = false,
+                        isLoading = false,
+                        isTrashMode = false,
+                        trashItems = emptyList()
+                    )
+                }
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, LedgerUiState())
 
@@ -102,6 +128,27 @@ class LedgerViewModel(
     }
 
     fun setCategoryFilter(categoryId: Long?) { _categoryId.value = categoryId }
+
+    // 回收站
+    /** 进入回收站前顺带清理 30 天保留期外的记录。 */
+    fun openTrash() {
+        _trashMode.value = true
+        viewModelScope.launch { expenseRepository.purgeExpiredTrash() }
+    }
+
+    fun closeTrash() { _trashMode.value = false }
+
+    fun restore(id: Long) {
+        viewModelScope.launch { expenseRepository.restore(id) }
+    }
+
+    fun hardDelete(id: Long) {
+        viewModelScope.launch { expenseRepository.hardDelete(id) }
+    }
+
+    fun emptyTrash() {
+        viewModelScope.launch { expenseRepository.emptyTrash() }
+    }
 
     /** 顶部总合计卡片的标题。 */
     private fun rangeLabel(filter: TimeFilter): String = when (filter) {

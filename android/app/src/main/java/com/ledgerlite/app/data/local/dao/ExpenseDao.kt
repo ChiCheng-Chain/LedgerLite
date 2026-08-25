@@ -113,6 +113,26 @@ interface ExpenseDao {
     @Query("UPDATE expense_records SET deletedAt = :now, updatedAt = :now WHERE id = :id")
     suspend fun softDelete(id: Long, now: Long)
 
+    // 回收站
+    @Query("""
+        SELECT e.*, c.name AS categoryName, c.color AS categoryColor, c.icon AS categoryIcon
+        FROM expense_records e
+        LEFT JOIN categories c ON e.categoryId = c.id
+        WHERE e.deletedAt IS NOT NULL
+        ORDER BY e.deletedAt DESC
+    """)
+    fun observeDeleted(): Flow<List<ExpenseWithCategory>>
+
+    @Query("UPDATE expense_records SET deletedAt = NULL, updatedAt = :now WHERE id = :id")
+    suspend fun restore(id: Long, now: Long)
+
+    @Query("DELETE FROM expense_records WHERE id = :id AND deletedAt IS NOT NULL")
+    suspend fun hardDelete(id: Long)
+
+    /** 回收站保留期外（deletedAt 早于 threshold）的记录物理删除。 */
+    @Query("DELETE FROM expense_records WHERE deletedAt IS NOT NULL AND deletedAt < :threshold")
+    suspend fun purgeOlderThan(threshold: Long): Int
+
     // 引用计数：删分类前判断是否被引用
     @Query("SELECT COUNT(*) FROM expense_records WHERE categoryId = :categoryId AND deletedAt IS NULL")
     suspend fun referenceCount(categoryId: Long): Int

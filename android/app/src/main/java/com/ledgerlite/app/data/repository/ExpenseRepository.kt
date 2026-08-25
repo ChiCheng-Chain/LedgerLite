@@ -76,6 +76,27 @@ class ExpenseRepository(private val dao: ExpenseDao) {
         dao.softDelete(id, DateUtil.nowMillis())
     }
 
+    fun observeDeleted(): Flow<List<ExpenseWithCategory>> = dao.observeDeleted()
+
+    suspend fun restore(id: Long) {
+        dao.restore(id, DateUtil.nowMillis())
+    }
+
+    /** 物理删除单条已删记录（回收站里手动彻底删）。 */
+    suspend fun hardDelete(id: Long) {
+        dao.hardDelete(id)
+    }
+
+    /** 清空回收站：物理删除全部软删记录，返回删除条数。 */
+    suspend fun emptyTrash(): Int = dao.purgeOlderThan(Long.MAX_VALUE)
+
+    /**
+     * 回收站 30 天保留期。软删超过 30 天的记录物理删除，返回删除条数。
+     * 由 LedgerViewModel 在进入流水页时触发一次。
+     */
+    suspend fun purgeExpiredTrash(retentionMillis: Long = 30L * 24 * 60 * 60 * 1000): Int =
+        dao.purgeOlderThan(DateUtil.nowMillis() - retentionMillis)
+
     /** 该分类被多少未删除流水引用。删分类前由 UI 层判断是否拦截。 */
     suspend fun referenceCount(categoryId: Long): Int = dao.referenceCount(categoryId)
 }
